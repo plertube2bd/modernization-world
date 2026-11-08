@@ -369,55 +369,64 @@ def spear_in_hand(colors):
 
 
 def armour_layer(tier: str, leggings: bool):
+    """
+    The worn armour, 64 x 32 in the vanilla humanoid layout. Kept slim: an open-visored helmet, a breastplate with
+    shoulder guards (bare forearms), low boots; the leggings are a belt and thigh guards. No black outline: edges are
+    the tier's dark shade, the trim its accent.
+    """
     _, dark, mid, light, high, accent, _, _ = TIERS[tier]
     px = [[(0, 0, 0, 0)] * 64 for _ in range(32)]
 
-    def box(x0, y0, x1, y1, base):
-        for y in range(y0, y1):
-            for x in range(x0, x1):
-                px[y][x] = (*base, 255)
+    def put(x, y, colour):
+        px[y][x] = (*colour, 255)
 
-    def shade_box(x0, y0, x1, y1):
-        """A face: light at the top, dark at the bottom, an outline, and an accent stripe through it."""
-        height = y1 - y0
-        for y in range(y0, y1):
-            t = (y - y0) / max(1, height - 1)
-            base = high if t < 0.15 else light if t < 0.45 else mid if t < 0.8 else dark
-            for x in range(x0, x1):
-                px[y][x] = (*base, 255)
-        for x in range(x0, x1):
-            px[y0][x] = (*OUTLINE, 255) if (x - x0) % 7 == 0 else px[y0][x]
-            px[y1 - 1][x] = (*dark, 255)
-        for y in range(y0, y1):
-            px[y][x0] = (*dark, 255)
-            px[y][x1 - 1] = (*dark, 255)
+    def face(x0, y0, w, h, covered, trim_rows=(), gems=()):
+        """Paints face cells where covered(fx, fy); shaded light at the top to dark at the bottom, edged in dark."""
+        cells = {(fx, fy) for fy in range(h) for fx in range(w) if covered(fx, fy)}
+        for fx, fy in cells:
+            t = fy / max(1, h - 1)
+            colour = high if fy == min(f for _, f in cells) else light if t < 0.4 else mid
+            edge = any((fx + dx, fy + dy) not in cells for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))
+                       if 0 <= fx + dx < w and 0 <= fy + dy < h) or (fy + 1 == h)
+            if edge and fy != min(f for _, f in cells):
+                colour = dark if fy + 1 == h or (fx, fy + 1) not in cells else mid
+            if fy in trim_rows:
+                colour = accent
+            if (fx, fy) in gems:
+                colour = accent
+            put(x0 + fx, y0 + fy, colour)
 
     if not leggings:
-        # Head: every face of the helmet, the front open for the face.
-        for x0, y0, x1, y1 in ((8, 0, 16, 8), (16, 0, 24, 8), (0, 8, 8, 16), (8, 8, 16, 16), (16, 8, 24, 16), (24, 8, 32, 16)):
-            shade_box(x0, y0, x1, y1)
-        for y in range(11, 16):
-            for x in range(10, 14):
-                px[y][x] = (0, 0, 0, 0)
-        for x in range(9, 15):
-            px[9][x] = (*accent, 255)
-        # Body and arms: the chestplate.
-        for x0, y0, x1, y1 in ((20, 16, 28, 20), (16, 20, 20, 32), (20, 20, 28, 32), (28, 20, 32, 32), (32, 20, 40, 32),
-                               (44, 16, 48, 20), (48, 16, 52, 20), (40, 20, 44, 32), (44, 20, 48, 32), (48, 20, 52, 32), (52, 20, 56, 32)):
-            shade_box(x0, y0, x1, y1)
-        for y in range(22, 28):
-            px[y][23] = (*accent, 255)
-            px[y][24] = (*accent, 255)
-        # Legs: only the boots, at the bottom.
-        for x0, x1 in ((0, 4), (4, 8), (8, 12), (12, 16)):
-            shade_box(x0, 26, x1, 32)
+        # ---- Helmet: crown and back closed, an open visor with a nose guard and cheek pieces; nothing underneath.
+        face(8, 0, 8, 8, lambda fx, fy: True, gems={(3, 3), (4, 4), (3, 4), (4, 3)})                      # top
+        face(8, 8, 8, 8, lambda fx, fy: fy < 3 or fx in (0, 7) or (fx in (3, 4) and fy < 6),
+             trim_rows=(2,))                                                                                 # front
+        face(0, 8, 8, 8, lambda fx, fy: fy < 6 or fx < 4, trim_rows=(2,))                                     # right side (front at fx 7)
+        face(16, 8, 8, 8, lambda fx, fy: fy < 6 or fx > 3, trim_rows=(2,))                                    # left side (front at fx 0)
+        face(24, 8, 8, 8, lambda fx, fy: True, trim_rows=(2,))                                                # back
+        # ---- Chestplate: a breastplate tapering at the waist, shoulder guards on the upper arm only.
+        face(20, 16, 8, 4, lambda fx, fy: True)                                                             # body top
+        face(20, 20, 8, 12, lambda fx, fy: fy < 9 or (fy < 11 and 1 <= fx <= 6) or 2 <= fx <= 5,
+             gems={(3, 3), (4, 3), (3, 4), (4, 4)})                                                           # front
+        face(16, 20, 4, 12, lambda fx, fy: fy < 9)                                                          # right side
+        face(28, 20, 4, 12, lambda fx, fy: fy < 9)                                                          # left side
+        face(32, 20, 8, 12, lambda fx, fy: fy < 10 or 2 <= fx <= 5)                                          # back
+        face(44, 16, 4, 4, lambda fx, fy: True)                                                             # arm top
+        for x0 in (40, 44, 48, 52):
+            face(x0, 20, 4, 12, lambda fx, fy: fy < 4, trim_rows=(3,))                                        # pauldrons
+        # ---- Boots: low, with a sole and an accent cuff.
+        face(8, 16, 4, 4, lambda fx, fy: True)                                                              # sole
+        for x0 in (0, 4, 8, 12):
+            face(x0, 20, 4, 12, lambda fx, fy: fy >= 8, trim_rows=(8,))
     else:
-        # Leggings: the waist of the body and the whole of the legs.
-        for x0, y0, x1, y1 in ((16, 26, 20, 32), (20, 26, 28, 32), (28, 26, 32, 32), (32, 26, 40, 32),
-                               (4, 16, 8, 20), (8, 16, 12, 20), (0, 20, 4, 32), (4, 20, 8, 32), (8, 20, 12, 32), (12, 20, 16, 32)):
-            shade_box(x0, y0, x1, y1)
-        for x in range(20, 28):
-            px[26][x] = (*accent, 255)
+        # ---- Leggings: a belt with a buckle, and thigh guards down to the knee; the inner thigh is left open.
+        for x0, w in ((16, 4), (20, 8), (28, 4), (32, 8)):
+            buckle = {(3, 9), (4, 9), (3, 10), (4, 10)} if x0 == 20 else set()
+            face(x0, 20, w, 12, lambda fx, fy: fy >= 8, trim_rows=(8,), gems=buckle)
+        face(0, 20, 4, 12, lambda fx, fy: fy < 8)                                                           # outer side
+        face(4, 20, 4, 12, lambda fx, fy: fy < 8, gems={(1, 5), (2, 5)})                                     # front, knee
+        face(8, 20, 4, 12, lambda fx, fy: fy < 3)                                                           # inner side
+        face(12, 20, 4, 12, lambda fx, fy: fy < 7)                                                          # back
     return px
 
 
