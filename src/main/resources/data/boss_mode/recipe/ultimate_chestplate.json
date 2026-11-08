@@ -1,12 +1,14 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "boss_mode:shard_chestplate",
-    "boss_mode:tempest_chestplate",
-    "boss_mode:behemoth_chestplate",
-    "boss_mode:void_chestplate"
+  "pattern": [
+    "X X",
+    "XXX",
+    "XXX"
   ],
+  "key": {
+    "X": "boss_mode:ultimate_alloy"
+  },
   "result": {
     "id": "boss_mode:ultimate_chestplate",
     "count": 1

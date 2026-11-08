@@ -1,5 +1,6 @@
 package com.bossmode.entity.boss;
 
+import com.bossmode.entity.PhaseHealth;
 import com.bossmode.config.BossConfig;
 import com.bossmode.entity.DamageKind;
 import com.bossmode.entity.DecoratedBoss;
@@ -183,7 +184,7 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, BossConfig.MAX_HEALTH)
+				.add(Attributes.MAX_HEALTH, BossConfig.FIRST_PHASE_HEALTH)
 				.add(Attributes.ATTACK_DAMAGE, BossConfig.ATTACK_DAMAGE)
 				.add(Attributes.MOVEMENT_SPEED, BossConfig.MOVEMENT_SPEED)
 				.add(Attributes.ARMOR, BossConfig.ARMOR)
@@ -225,6 +226,11 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 
 	public BossPhase getPhase() {
 		return BossPhase.byNumber(this.entityData.get(DATA_PHASE));
+	}
+
+	/** The health pool of {@code phase}: 100 in phase 1, rising to 300 in phase 10. */
+	public static double phasePool(BossPhase phase) {
+		return PhaseHealth.pool(phase.number(), BossPhase.values().length, BossConfig.FIRST_PHASE_HEALTH, BossConfig.LAST_PHASE_HEALTH);
 	}
 
 	private void setPhase(BossPhase phase) {
@@ -390,7 +396,7 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 			return; // flying costs everything it has - no crystal regrowth in the air
 		}
 		if (this.tickCount - this.lastHurtTick > BossConfig.REGEN_DELAY && getHealth() < getMaxHealth()) {
-			heal(BossConfig.REGEN_PER_SECOND / 20.0F);
+			heal(getMaxHealth() * BossConfig.REGEN_SHARE_PER_SECOND / 20.0F);
 			if (this.tickCount % 10 == 0) {
 				level.sendParticles(ParticleTypes.GLOW, getX(), getY(0.6), getZ(), 6, getBbWidth() * 0.4, getBbHeight() * 0.3, getBbWidth() * 0.4, 0.02);
 			}
@@ -406,6 +412,7 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 		this.transitionRefills = phase != old;
 		if (phase != old) {
 			setPhase(phase);
+			PhaseHealth.apply(this, phasePool(phase), false);
 			this.bossBar.setStyle(phase.barColor(), phase.darkensSky());
 			announcePhase(level, old, phase);
 		}
@@ -977,6 +984,7 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 		this.introFinished = input.getBooleanOr("IntroFinished", false);
 		BossPhase phase = BossPhase.byNumber(input.getIntOr("Phase", 1));
 		setPhase(phase);
+		PhaseHealth.apply(this, phasePool(phase), true);
 		this.entityData.set(DATA_ENRAGED, input.getBooleanOr("Enraged", false));
 		this.lastEntryWavePhase = input.getIntOr("EntryWavePhase", phase.number());
 		setFlying(phase.canFly() && input.getBooleanOr("Flying", false));

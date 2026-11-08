@@ -1,5 +1,6 @@
 package com.bossmode.entity.raid;
 
+import com.bossmode.entity.PhaseHealth;
 import com.bossmode.BossMode;
 import com.bossmode.entity.DamageKind;
 import com.bossmode.entity.DecoratedBoss;
@@ -146,6 +147,11 @@ public abstract class RaidBossEntity<S extends RaidBossEntity<S>> extends Monste
 	public abstract RaidPhase phase(int number);
 
 	public abstract int maxPhase();
+
+	/** The health pool of phase {@code number}: the spec's first pool, rising evenly to its last. */
+	public double phasePool(int number) {
+		return PhaseHealth.pool(number, maxPhase(), this.spec.firstPhaseHealth(), this.spec.lastPhaseHealth());
+	}
 
 	/** Called every AI tick in the fighting states, before the action state machine. */
 	protected void tickMechanics(ServerLevel level) {
@@ -386,7 +392,7 @@ public abstract class RaidBossEntity<S extends RaidBossEntity<S>> extends Monste
 
 	private void regenerate(ServerLevel level) {
 		if (canRegenerate() && this.tickCount - this.lastHurtTick > this.spec.regenDelay() && getHealth() < getMaxHealth()) {
-			heal(this.spec.regenPerSecond() / 20.0F);
+			heal(getMaxHealth() * this.spec.regenSharePerSecond() / 20.0F);
 			if (this.tickCount % 10 == 0) {
 				level.sendParticles(ParticleTypes.GLOW, getX(), getY(0.6), getZ(), 6, getBbWidth() * 0.4, getBbHeight() * 0.3, getBbWidth() * 0.4, 0.02);
 			}
@@ -402,6 +408,7 @@ public abstract class RaidBossEntity<S extends RaidBossEntity<S>> extends Monste
 		this.transitionRefills = phase.number() != old.number();
 		if (this.transitionRefills) {
 			setPhaseNumber(phase.number());
+			PhaseHealth.apply(this, phasePool(phase.number()), false);
 			this.bossBar.setStyle(phase.barColor(), phase.darkensSky());
 			announce(level, Component.translatable("message.boss_mode.raid.phase", getDisplayName(), phase.number()));
 			onPhaseStart(level, phase);
@@ -865,6 +872,7 @@ public abstract class RaidBossEntity<S extends RaidBossEntity<S>> extends Monste
 		this.introFinished = input.getBooleanOr("IntroFinished", false);
 		RaidPhase phase = phase(input.getIntOr("Phase", 1));
 		setPhaseNumber(phase.number());
+		PhaseHealth.apply(this, phasePool(phase.number()), true);
 		this.entityData.set(DATA_ENRAGED, input.getBooleanOr("Enraged", false));
 		this.lastEntryWavePhase = input.getIntOr("EntryWavePhase", phase.number());
 		this.minions.clear();

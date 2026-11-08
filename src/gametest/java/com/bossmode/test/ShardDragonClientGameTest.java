@@ -136,7 +136,7 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 			server.waitFor(s -> stateOf(s) == BossState.IDLE, 120);
 			server.runOnServer(s -> {
 				ShardDragonEntity d = requireBoss(s);
-				check(d.getMaxHealth() == 1024.0F && d.getHealth() == 1024.0F, "phase pool of 1024 HP (x10 phases = 10240)");
+				check(d.getMaxHealth() == 100.0F && d.getHealth() == 100.0F, "phase 1 pool of 100 HP (" + d.getHealth() + "/" + d.getMaxHealth() + ")");
 				check(Math.abs(d.getScale() - 2.0F) < 0.01F, "phase 1 size x2.0 (" + d.getScale() + ")");
 				check(d.getBossBar().viewerCount() == 1, "decorated boss bar shown to the player");
 			});
@@ -189,6 +189,7 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 					ShardDragonEntity d = requireBoss(s);
 					check(d.getPhase().number() == number, "reached phase " + number);
 					check(Math.abs(d.getScale() - phase.scale()) < 0.01F, "phase " + number + " size x" + phase.scale());
+					check(d.getMaxHealth() == (float) ShardDragonEntity.phasePool(d.getPhase()), "phase " + number + " pool is " + ShardDragonEntity.phasePool(d.getPhase()) + " (" + d.getMaxHealth() + ")");
 					check(d.getHealth() == d.getMaxHealth(), "phase " + number + " pool refilled");
 					checkEntryWave(s, d, phase);
 				});
@@ -731,7 +732,7 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 				VoidSovereignEntity v = requireSovereign(s);
 				check(Math.abs(v.getX() - summon.x) < 1.5 && Math.abs(v.getZ() - summon.z) < 1.5, "Void Sovereign rose in front of the altar");
 				check(v.getBossState() == BossState.SPAWNING, "Sovereign plays its intro");
-				check(v.getMaxHealth() == 1024.0F && v.getPhase() == SovereignPhase.ONE, "phase 1 of 6, 1,024 HP pool");
+				check(v.getMaxHealth() == 100.0F && v.getHealth() == 100.0F && v.getPhase() == SovereignPhase.ONE, "phase 1 of 10, 100 HP pool (" + v.getHealth() + "/" + v.getMaxHealth() + ")");
 				check(VoidAltarBlock.trophies(s.overworld().getBlockState(altarPos)) == 0, "altar spent");
 			});
 			server.waitFor(s -> !ArenaTerraformer.isBusy(s.overworld()), 1200);
@@ -806,6 +807,7 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 					VoidSovereignEntity v = requireSovereign(s);
 					check(v.getPhase().number() == number, "Sovereign reached phase " + number);
 					check(Math.abs(v.getScale() - phase.scale()) < 0.01F, "Sovereign phase " + number + " size x" + phase.scale());
+					check(v.getMaxHealth() == (float) VoidSovereignEntity.phasePool(v.getPhase()), "Sovereign phase " + number + " pool is " + VoidSovereignEntity.phasePool(v.getPhase()) + " (" + v.getMaxHealth() + ")");
 					check(v.getHealth() == v.getMaxHealth(), "Sovereign phase " + number + " pool refilled");
 					int warlords = s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, v.getBoundingBox().inflate(128), w -> w.isSummonedBy(v)).size();
 					check(warlords == phase.midBosses(), "Sovereign phase " + number + " mid-bosses: " + warlords);

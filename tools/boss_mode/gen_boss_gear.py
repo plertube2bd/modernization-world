@@ -23,7 +23,7 @@ TIERS = {
     "tempest": ("tempest_scale", (30, 52, 74), (68, 128, 170), (128, 198, 228), (222, 248, 255), (255, 226, 86), "tempest_wyvern", (6, 10)),
     "behemoth": ("behemoth_plate", (38, 28, 26), (112, 62, 30), (206, 118, 40), (255, 200, 96), (228, 68, 30), "bastion_behemoth", (7, 11)),
     "void": ("void_ingot", (16, 10, 26), (58, 26, 84), (112, 52, 150), (198, 122, 255), (255, 60, 200), "void_sovereign", (8, 12)),
-    "ultimate": (None, (92, 62, 12), (196, 148, 40), (248, 210, 90), (255, 250, 222), (90, 230, 255), None, None),
+    "ultimate": ("ultimate_alloy", (92, 62, 12), (196, 148, 40), (248, 210, 90), (255, 250, 222), (90, 230, 255), None, None),
 }
 BOSS_TIERS = ["shard", "tempest", "behemoth", "void"]
 KINDS = ["sword", "pickaxe", "axe", "shovel", "hoe", "spear", "helmet", "chestplate", "leggings", "boots"]
@@ -270,6 +270,24 @@ ICONS = {
         "................",
         "................",
     ],
+    "ultimate_alloy": [
+        "................",
+        ".......OO.......",
+        "......O44O......",
+        ".....O4A43O.....",
+        "....O44A433O....",
+        "...O344A4332O...",
+        "..O3444A43322O..",
+        ".OAAAAAAAAAAAAO.",
+        "..O333A332221O..",
+        "...O33A32221O...",
+        "....O3A3221O....",
+        ".....O3A21O.....",
+        "......O21O......",
+        ".......OO.......",
+        "................",
+        "................",
+    ],
     "void_ingot": [
         "................",
         "................",
@@ -411,8 +429,10 @@ def main() -> None:
                "helmet": "투구", "chestplate": "흉갑", "leggings": "레깅스", "boots": "부츠"}
     en_kind = {"sword": "Sword", "pickaxe": "Pickaxe", "axe": "Axe", "shovel": "Shovel", "hoe": "Hoe", "spear": "Spear",
                "helmet": "Helmet", "chestplate": "Chestplate", "leggings": "Leggings", "boots": "Boots"}
-    ko_material = {"crystal_scale": "수정 비늘", "tempest_scale": "폭풍 비늘", "behemoth_plate": "거수 장갑판", "void_ingot": "공허 주괴"}
-    en_material = {"crystal_scale": "Crystal Scale", "tempest_scale": "Tempest Scale", "behemoth_plate": "Behemoth Plate", "void_ingot": "Void Ingot"}
+    ko_material = {"crystal_scale": "수정 비늘", "tempest_scale": "폭풍 비늘", "behemoth_plate": "거수 장갑판", "void_ingot": "공허 주괴",
+                   "ultimate_alloy": "최종 합금"}
+    en_material = {"crystal_scale": "Crystal Scale", "tempest_scale": "Tempest Scale", "behemoth_plate": "Behemoth Plate", "void_ingot": "Void Ingot",
+                   "ultimate_alloy": "Ultimate Alloy"}
 
     tool_tags = {"sword": "swords", "pickaxe": "pickaxes", "axe": "axes", "shovel": "shovels", "hoe": "hoes", "spear": "spears",
                  "helmet": "head_armor", "chestplate": "chest_armor", "leggings": "leg_armor", "boots": "foot_armor"}
@@ -465,13 +485,13 @@ def main() -> None:
         existing = json.loads(path.read_text(encoding="utf-8")).get("values", []) if path.exists() else []
         write_json(path, {"replace": False, "values": existing + [v for v in values if v not in existing]})
 
-    # Recipes: the vanilla shapes with the boss's material; the ultimate piece from one of each boss's.
+    # Recipes: the vanilla shapes with the tier's material; the ultimate alloy from one of each boss's material.
     shapes = {
         "sword": ["X", "X", "#"], "pickaxe": ["XXX", " # ", " # "], "axe": ["XX", "X#", " #"], "shovel": ["X", "#", "#"],
         "hoe": ["XX", " #", " #"], "spear": ["  X", " # ", "#  "],
         "helmet": ["XXX", "X X"], "chestplate": ["X X", "XXX", "XXX"], "leggings": ["XXX", "X X", "X X"], "boots": ["X X", "X X"],
     }
-    for tier in BOSS_TIERS:
+    for tier in TIERS:
         material = TIERS[tier][0]
         for kind, pattern in shapes.items():
             key = {"X": f"{NS}:{material}"}
@@ -480,11 +500,10 @@ def main() -> None:
             write_json(DATA / "recipe" / f"{tier}_{kind}.json", {
                 "type": "minecraft:crafting_shaped", "category": "equipment", "pattern": pattern, "key": key,
                 "result": {"id": f"{NS}:{tier}_{kind}", "count": 1}})
-    for kind in KINDS:
-        write_json(DATA / "recipe" / f"ultimate_{kind}.json", {
-            "type": "minecraft:crafting_shapeless", "category": "equipment",
-            "ingredients": [f"{NS}:{tier}_{kind}" for tier in BOSS_TIERS],
-            "result": {"id": f"{NS}:ultimate_{kind}", "count": 1}})
+    write_json(DATA / "recipe" / "ultimate_alloy.json", {
+        "type": "minecraft:crafting_shapeless", "category": "misc",
+        "ingredients": [f"{NS}:{TIERS[tier][0]}" for tier in BOSS_TIERS],
+        "result": {"id": f"{NS}:ultimate_alloy", "count": 1}})
 
     # Each boss drops its material, a few at a time.
     for tier in BOSS_TIERS:
@@ -509,8 +528,6 @@ def main() -> None:
         "tooltip.boss_mode.gear.hit.behemoth": "적중 시: 강하게 밀쳐냄",
         "tooltip.boss_mode.gear.hit.void": "적중 시: 위더 2초",
         "tooltip.boss_mode.gear.hit.ultimate": "적중 시: 불, 번개, 밀쳐내기, 위더 모두",
-        "tooltip.boss_mode.gear.forge": "네 보스의 같은 장비를 합치면 최종 장비가 됩니다",
-        "tooltip.boss_mode.gear.ultimate": "넣은 장비의 인챈트 중 가장 높은 레벨을 이어받습니다",
     })
     lang_en.update({
         "tooltip.boss_mode.gear.set": "Full set of four:",
@@ -524,13 +541,13 @@ def main() -> None:
         "tooltip.boss_mode.gear.hit.behemoth": "On hit: knocks the target far back",
         "tooltip.boss_mode.gear.hit.void": "On hit: wither for 2 s",
         "tooltip.boss_mode.gear.hit.ultimate": "On hit: fire, lightning, knockback and wither",
-        "tooltip.boss_mode.gear.forge": "One of each boss's pieces of this kind forges the ultimate one",
-        "tooltip.boss_mode.gear.ultimate": "Keeps the highest level of each enchantment on the pieces it was forged from",
     })
     for name, entries in (("ko_kr", lang_ko), ("en_us", lang_en)):
         path = ASSETS / "lang" / f"{name}.json"
         language = json.loads(path.read_text(encoding="utf-8"))
         language.update(entries)
+        for retired in ("tooltip.boss_mode.gear.forge", "tooltip.boss_mode.gear.ultimate"):
+            language.pop(retired, None)
         write_json(path, language)
     print("boss gear generated")
 

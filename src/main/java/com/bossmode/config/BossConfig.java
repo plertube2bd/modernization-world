@@ -16,8 +16,9 @@ public final class BossConfig {
 	}
 
 	// =================================================================== Shard Dragon - body
-	/** Per-phase health pool. 1024 is the vanilla max_health attribute cap; 10 pools = 10,240 HP in total. */
-	public static final double MAX_HEALTH = 1024.0;
+	/** Each phase is its own pool, rising evenly: 100 HP in phase 1 to 300 in phase 10 (1,989 HP in all). */
+	public static final double FIRST_PHASE_HEALTH = 100.0;
+	public static final double LAST_PHASE_HEALTH = 300.0;
 	public static final double ATTACK_DAMAGE = 18.0;
 	/** Ground mobs move roughly with speed^2: 0.35 = ~7 blocks/s in phase 1, ~12 blocks/s in phase 10. */
 	public static final double MOVEMENT_SPEED = 0.35;
@@ -34,8 +35,8 @@ public final class BossConfig {
 	public static final float HITBOX_HEIGHT = 2.9F;
 	public static final int XP_REWARD = 2000;
 	public static final float EXPLOSION_DAMAGE_MULTIPLIER = 0.5F;
-	/** Crystal regeneration: HP per second once the dragon has not been hurt for REGEN_DELAY ticks (never while flying). */
-	public static final float REGEN_PER_SECOND = 12.0F;
+	/** Crystal regeneration: this share of the phase's pool per second once the dragon has not been hurt for REGEN_DELAY ticks (never while flying). */
+	public static final float REGEN_SHARE_PER_SECOND = 0.012F;
 	public static final int REGEN_DELAY = 100;
 	/** Damage taken while EXPOSED (recovering) in phases 9-10. */
 	public static final float EXPOSED_DAMAGE_MULTIPLIER = 2.0F;

@@ -1,12 +1,15 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "boss_mode:shard_spear",
-    "boss_mode:tempest_spear",
-    "boss_mode:behemoth_spear",
-    "boss_mode:void_spear"
+  "pattern": [
+    "  X",
+    " # ",
+    "#  "
   ],
+  "key": {
+    "X": "boss_mode:ultimate_alloy",
+    "#": "minecraft:stick"
+  },
   "result": {
     "id": "boss_mode:ultimate_spear",
     "count": 1

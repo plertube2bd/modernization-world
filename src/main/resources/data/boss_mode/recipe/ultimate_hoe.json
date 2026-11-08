@@ -1,12 +1,15 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "boss_mode:shard_hoe",
-    "boss_mode:tempest_hoe",
-    "boss_mode:behemoth_hoe",
-    "boss_mode:void_hoe"
+  "pattern": [
+    "XX",
+    " #",
+    " #"
   ],
+  "key": {
+    "X": "boss_mode:ultimate_alloy",
+    "#": "minecraft:stick"
+  },
   "result": {
     "id": "boss_mode:ultimate_hoe",
     "count": 1

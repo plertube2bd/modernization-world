@@ -55,8 +55,8 @@ public class BastionBehemothEntity extends RaidBossEntity<BastionBehemothEntity>
 	public static final String[] ACTION_CLIPS = {"maul", "tail_sweep", "earthquake", "boulder_throw", "rolling_charge", "fortify", "crystal_spikes",
 			"magma_breach", "seismic_roar", "summon"};
 
-	public static final RaidBossSpec SPEC = new RaidBossSpec("bastion_behemoth", BastionConfig.BASE_SCALE, BastionConfig.REGEN_PER_SECOND,
-			BastionConfig.REGEN_DELAY, BastionConfig.SPAWN_INTRO_TICKS, BastionConfig.SPAWN_ROAR_TICK, BastionConfig.PHASE_TRANSITION_TICKS,
+	public static final RaidBossSpec SPEC = new RaidBossSpec("bastion_behemoth", BastionConfig.BASE_SCALE, BastionConfig.REGEN_SHARE_PER_SECOND,
+			BastionConfig.REGEN_DELAY, BastionConfig.FIRST_PHASE_HEALTH, BastionConfig.LAST_PHASE_HEALTH, BastionConfig.SPAWN_INTRO_TICKS, BastionConfig.SPAWN_ROAR_TICK, BastionConfig.PHASE_TRANSITION_TICKS,
 			BastionConfig.TRANSITION_SHOCKWAVE_RADIUS, BastionConfig.DEATH_ANIMATION_TICKS, BastionConfig.DEATH_EXPLOSION_POWER,
 			BastionConfig.ENRAGE_HEALTH_THRESHOLD, BastionConfig.ENRAGE_DAMAGE_MULTIPLIER, BastionConfig.ENRAGE_SPEED_MULTIPLIER,
 			BastionConfig.ENRAGE_COOLDOWN_REDUCTION, BastionConfig.BOSS_BAR_RANGE, BossEvent.BossBarOverlay.NOTCHED_10, BastionConfig.NORMAL_ATTACK_CHANCE,
@@ -72,7 +72,7 @@ public class BastionBehemothEntity extends RaidBossEntity<BastionBehemothEntity>
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, BastionConfig.MAX_HEALTH)
+				.add(Attributes.MAX_HEALTH, BastionConfig.FIRST_PHASE_HEALTH)
 				.add(Attributes.ATTACK_DAMAGE, BastionConfig.ATTACK_DAMAGE)
 				.add(Attributes.MOVEMENT_SPEED, BastionConfig.MOVEMENT_SPEED)
 				.add(Attributes.ARMOR, BastionConfig.ARMOR)

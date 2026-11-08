@@ -9,9 +9,12 @@ import net.minecraft.world.BossEvent;
  *
  * @param id              entity / model id, e.g. {@code tempest_wyvern} (animations are {@code animation.<id>.<clip>})
  * @param actionClips     clips the action controller can trigger (the phase roar is added automatically)
+ * @param regenSharePerSecond share of the phase's pool regained per second when left alone
+ * @param firstPhaseHealth    phase 1's pool; the pools rise evenly to {@code lastPhaseHealth} in the last phase
  * @param enrageThreshold health fraction of the last phase at which it enrages once
  */
-public record RaidBossSpec(String id, float baseScale, float regenPerSecond, int regenDelay, int introTicks, int roarTick,
+public record RaidBossSpec(String id, float baseScale, float regenSharePerSecond, int regenDelay, double firstPhaseHealth,
+		double lastPhaseHealth, int introTicks, int roarTick,
 		int transitionTicks, double transitionShockwave, int deathTicks, float deathExplosionPower, float enrageThreshold,
 		double enrageDamage, double enrageSpeed, double enrageCooldownReduction, double bossBarRange, BossEvent.BossBarOverlay overlay,
 		double normalChance, int globalAfterNormal, int globalAfterSpecial, int maxMinions, float maxTurn, int xp, DustParticleOptions dust,

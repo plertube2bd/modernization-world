@@ -3,8 +3,7 @@
   "package": "com.bossmode.mixin",
   "compatibilityLevel": "JAVA_21",
   "mixins": [
-    "BossGearDamageMixin",
-    "BossGearForgeMixin"
+    "BossGearDamageMixin"
   ],
   "injectors": {
     "defaultRequire": 1

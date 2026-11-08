@@ -1,12 +1,13 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "boss_mode:shard_helmet",
-    "boss_mode:tempest_helmet",
-    "boss_mode:behemoth_helmet",
-    "boss_mode:void_helmet"
+  "pattern": [
+    "XXX",
+    "X X"
   ],
+  "key": {
+    "X": "boss_mode:ultimate_alloy"
+  },
   "result": {
     "id": "boss_mode:ultimate_helmet",
     "count": 1

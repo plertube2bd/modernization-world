@@ -259,6 +259,5 @@
   "tooltip.boss_mode.gear.hit.behemoth": "적중 시: 강하게 밀쳐냄",
   "tooltip.boss_mode.gear.hit.void": "적중 시: 위더 2초",
   "tooltip.boss_mode.gear.hit.ultimate": "적중 시: 불, 번개, 밀쳐내기, 위더 모두",
-  "tooltip.boss_mode.gear.forge": "네 보스의 같은 장비를 합치면 최종 장비가 됩니다",
-  "tooltip.boss_mode.gear.ultimate": "넣은 장비의 인챈트 중 가장 높은 레벨을 이어받습니다"
+  "item.boss_mode.ultimate_alloy": "최종 합금"
 }

@@ -259,6 +259,5 @@
   "tooltip.boss_mode.gear.hit.behemoth": "On hit: knocks the target far back",
   "tooltip.boss_mode.gear.hit.void": "On hit: wither for 2 s",
   "tooltip.boss_mode.gear.hit.ultimate": "On hit: fire, lightning, knockback and wither",
-  "tooltip.boss_mode.gear.forge": "One of each boss's pieces of this kind forges the ultimate one",
-  "tooltip.boss_mode.gear.ultimate": "Keeps the highest level of each enchantment on the pieces it was forged from"
+  "item.boss_mode.ultimate_alloy": "Ultimate Alloy"
 }

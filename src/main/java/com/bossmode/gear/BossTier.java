@@ -17,7 +17,7 @@ import net.minecraft.resources.ResourceKey;
 import java.util.Map;
 
 /**
- * The boss gear tiers, in the order the bosses are fought, and the gear forged from all four.
+ * The boss gear tiers, in the order the bosses are fought, and the ultimate gear made from all four bosses' materials.
  * Netherite is the yardstick: sword 8 at 1.6, axe 10, spear 5, mining speed 9, 2,031 uses, armour 3/8/6/3 with
  * toughness 3 and 0.1 knockback resistance a piece.
  */
@@ -27,10 +27,10 @@ public enum BossTier {
     TEMPEST("tempest", "tempest_scale", 10.0F, 1.8F, 12.0F, 7.0F, 5.5F, 11.0F, 3000, 18, 3, 9, 7, 3, 4.0F, 0.05F, 48, Rarity.RARE),
     BEHEMOTH("behemoth", "behemoth_plate", 11.0F, 1.4F, 13.0F, 8.0F, 6.0F, 11.0F, 3800, 15, 4, 9, 7, 4, 5.0F, 0.2F, 59, Rarity.RARE),
     VOID("void", "void_ingot", 12.0F, 1.6F, 14.0F, 9.0F, 7.0F, 13.0F, 4500, 20, 4, 10, 8, 4, 6.0F, 0.15F, 70, Rarity.EPIC),
-    /** Forged from one piece of each boss's gear: never wears out. */
-    ULTIMATE("ultimate", null, 14.0F, 1.7F, 16.0F, 11.0F, 8.5F, 15.0F, 9999, 22, 5, 10, 8, 5, 7.0F, 0.25F, 99, Rarity.EPIC);
+    /** Made from the ultimate alloy (one of each boss's materials): never wears out. */
+    ULTIMATE("ultimate", "ultimate_alloy", 14.0F, 1.7F, 16.0F, 11.0F, 8.5F, 15.0F, 9999, 22, 5, 10, 8, 5, 7.0F, 0.25F, 99, Rarity.EPIC);
 
-    /** The four bosses' tiers, the ingredients of the ultimate gear. */
+    /** The four bosses' tiers, whose materials make the ultimate alloy. */
     public static final BossTier[] BOSSES = {SHARD, TEMPEST, BEHEMOTH, VOID};
 
     private final String id;
@@ -87,7 +87,7 @@ public enum BossTier {
         return id;
     }
 
-    /** The material this boss drops, or null for the ultimate tier, which is forged from gear instead. */
+    /** What the tier's gear is made from: the boss's drop, or for the ultimate tier the alloy of all four. */
     public String materialId() {
         return materialId;
     }

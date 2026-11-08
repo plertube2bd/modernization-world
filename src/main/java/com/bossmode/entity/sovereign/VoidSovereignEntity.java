@@ -1,5 +1,6 @@
 package com.bossmode.entity.sovereign;
 
+import com.bossmode.entity.PhaseHealth;
 import com.bossmode.BossMode;
 import com.bossmode.config.SovereignConfig;
 import com.bossmode.entity.DamageKind;
@@ -180,7 +181,7 @@ public class VoidSovereignEntity extends Monster implements ActionHost, ShardFac
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, SovereignConfig.MAX_HEALTH)
+				.add(Attributes.MAX_HEALTH, SovereignConfig.FIRST_PHASE_HEALTH)
 				.add(Attributes.ATTACK_DAMAGE, SovereignConfig.ATTACK_DAMAGE)
 				.add(Attributes.MOVEMENT_SPEED, SovereignConfig.MOVEMENT_SPEED)
 				.add(Attributes.ARMOR, SovereignConfig.ARMOR)
@@ -387,7 +388,7 @@ public class VoidSovereignEntity extends Monster implements ActionHost, ShardFac
 
 	private void regenerate(ServerLevel level) {
 		if (this.tickCount - this.lastHurtTick > SovereignConfig.REGEN_DELAY && getHealth() < getMaxHealth()) {
-			heal(SovereignConfig.REGEN_PER_SECOND / 20.0F);
+			heal(getMaxHealth() * SovereignConfig.REGEN_SHARE_PER_SECOND / 20.0F);
 			if (this.tickCount % 10 == 0) {
 				level.sendParticles(VOID_DUST, getX(), getY(0.6), getZ(), 6, getBbWidth() * 0.4, getBbHeight() * 0.3, getBbWidth() * 0.4, 0);
 			}
@@ -395,6 +396,11 @@ public class VoidSovereignEntity extends Monster implements ActionHost, ShardFac
 	}
 
 	/** Advances to {@code phase} (or roars into enrage): invulnerable roar, growth, health refill, entry wave, shield. */
+	/** The health pool of {@code phase}: 100 in phase 1, rising to 600 in phase 10. */
+	public static double phasePool(SovereignPhase phase) {
+		return PhaseHealth.pool(phase.number(), SovereignPhase.values().length, SovereignConfig.FIRST_PHASE_HEALTH, SovereignConfig.LAST_PHASE_HEALTH);
+	}
+
 	private void startTransition(ServerLevel level, SovereignPhase phase, boolean enrage) {
 		this.actions.cancel(level);
 		SovereignPhase old = getPhase();
@@ -403,6 +409,7 @@ public class VoidSovereignEntity extends Monster implements ActionHost, ShardFac
 		this.transitionRefills = phase != old;
 		if (phase != old) {
 			setPhase(phase);
+			PhaseHealth.apply(this, phasePool(phase), false);
 			this.bossBar.setStyle(phase.barColor(), phase.darkensSky());
 			this.shieldPending = phase.pylons() > 0;
 			announce(level, Component.translatable(phase.pylons() > 0 ? "message.boss_mode.sovereign.phase_shield" : "message.boss_mode.sovereign.phase",
@@ -1037,6 +1044,7 @@ public class VoidSovereignEntity extends Monster implements ActionHost, ShardFac
 		this.introFinished = input.getBooleanOr("IntroFinished", false);
 		SovereignPhase phase = SovereignPhase.byNumber(input.getIntOr("Phase", 1));
 		setPhase(phase);
+		PhaseHealth.apply(this, phasePool(phase), true);
 		this.entityData.set(DATA_ENRAGED, input.getBooleanOr("Enraged", false));
 		this.lastEntryWavePhase = input.getIntOr("EntryWavePhase", phase.number());
 		this.entityData.set(DATA_SHIELDED, input.getBooleanOr("Shielded", false));

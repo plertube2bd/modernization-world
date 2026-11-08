@@ -1,7 +1,6 @@
 package com.bossmode.gear;
 
 import com.bossmode.BossMode;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.fabricmc.fabric.api.creativetab.v1.CreativeModeTabEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -29,9 +28,6 @@ import net.minecraft.world.entity.ai.attributes.AttributeModifier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
@@ -228,33 +224,4 @@ public final class BossGear {
         }
         if (tier.has(BossTier.VOID)) target.addEffect(new MobEffectInstance(MobEffects.WITHER, 40, 0), attacker);
     }
-
-    // ---- Forging the ultimate gear -----------------------------------------------------------------
-
-    public static boolean isUltimate(ItemStack stack) {
-        return stack.getItem() instanceof BossGearItem piece && piece.tier() == BossTier.ULTIMATE;
-    }
-
-    /**
-     * The ultimate piece keeps every enchantment the four pieces had, each at the highest level among them.
-     * Where two cannot go together (Sharpness and Smite, say), the higher level stays, the first piece's on a tie.
-     */
-    public static void mergeEnchantments(ItemStack result, List<ItemStack> ingredients) {
-        Map<Holder<Enchantment>, Integer> best = new java.util.LinkedHashMap<>();
-        for (ItemStack ingredient : ingredients) {
-            for (Object2IntMap.Entry<Holder<Enchantment>> entry : ingredient.getEnchantments().entrySet()) {
-                best.merge(entry.getKey(), entry.getIntValue(), Math::max);
-            }
-        }
-        List<Map.Entry<Holder<Enchantment>, Integer>> byLevel = new ArrayList<>(best.entrySet());
-        byLevel.sort((a, b) -> Integer.compare(b.getValue(), a.getValue()));
-        ItemEnchantments.Mutable merged = new ItemEnchantments.Mutable(result.getEnchantments());
-        for (Map.Entry<Holder<Enchantment>, Integer> entry : byLevel) {
-            if (merged.keySet().stream().allMatch(kept -> kept.equals(entry.getKey()) || Enchantment.areCompatible(kept, entry.getKey()))) {
-                merged.upgrade(entry.getKey(), entry.getValue());
-            }
-        }
-        result.set(DataComponents.ENCHANTMENTS, merged.toImmutable());
-    }
-
 }

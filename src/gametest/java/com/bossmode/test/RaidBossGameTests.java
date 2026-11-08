@@ -168,8 +168,8 @@ final class RaidBossGameTests {
 				RaidBossEntity<?> b = require(s, k);
 				check(Math.abs(b.getX() - summon.x) < 1.5 && Math.abs(b.getZ() - summon.z) < 1.5, k.id() + " rose in front of its altar");
 				check(b.getBossState() == BossState.SPAWNING, k.id() + " plays its intro");
-				check(b.getMaxHealth() == 1024.0F && b.getPhase().number() == 1 && b.maxPhase() == k.maxPhase(),
-						k.id() + ": phase 1 of " + k.maxPhase() + ", 1,024 HP pool");
+				check(b.getMaxHealth() == 100.0F && b.getHealth() == 100.0F && b.getPhase().number() == 1 && b.maxPhase() == k.maxPhase(),
+						k.id() + ": phase 1 of " + k.maxPhase() + ", 100 HP pool (" + b.getHealth() + "/" + b.getMaxHealth() + ")");
 				BlockState state = s.overworld().getBlockState(altarPos);
 				check(state.getValue(ShardAltarBlock.CHARGE) == 0 && state.getValue(ShardAltarBlock.RITUAL) == 0, k.id() + ": altar spent and reusable");
 			});
@@ -292,6 +292,7 @@ final class RaidBossGameTests {
 					RaidPhase phase = b.phase(number);
 					check(b.getPhase().number() == number, k.id() + " reached phase " + number);
 					check(Math.abs(b.getScale() - phase.scale()) < 0.01F, k.id() + " phase " + number + " size x" + phase.scale());
+					check(b.getMaxHealth() == (float) b.phasePool(number), k.id() + " phase " + number + " pool is " + b.phasePool(number) + " (" + b.getMaxHealth() + ")");
 					check(b.getHealth() == b.getMaxHealth(), k.id() + " phase " + number + " pool refilled");
 					check(b.countWarlords(s.overworld()) == phase.midBosses(), k.id() + " phase " + number + " Shard Warlords: " + phase.midBosses());
 				});
@@ -339,7 +340,7 @@ final class RaidBossGameTests {
 			TempestWyvernEntity w = (TempestWyvernEntity) require(s, k);
 			double height = w.getY() - w.groundBelow(s.overworld());
 			check(w.isFlying() && w.isNoGravity() && height > 4.0, fmt("Wyvern airborne %.1f blocks above the ground", height));
-			w.setHealth(900.0F);
+			w.setHealth(w.getMaxHealth() * 0.5F);
 		});
 		// the camera hovers in plain sight (survival with flight, so it stays a valid target the Wyvern keeps circling)
 		Vec3 wyvern = server.computeOnServer(s -> require(s, k).position());
@@ -354,7 +355,7 @@ final class RaidBossGameTests {
 		context.waitTicks(30);
 		server.runOnServer(s -> {
 			TempestWyvernEntity w = (TempestWyvernEntity) require(s, k);
-			check(!w.isFlying() || w.getHealth() == 900.0F, "no regeneration while airborne (" + w.getHealth() + (w.isFlying() ? "" : ", landed meanwhile") + ")");
+			check(!w.isFlying() || w.getHealth() == w.getMaxHealth() * 0.5F, "no regeneration while airborne (" + w.getHealth() + (w.isFlying() ? "" : ", landed meanwhile") + ")");
 		});
 		server.runOnServer(s -> {
 			TempestWyvernEntity w = (TempestWyvernEntity) require(s, k);
@@ -405,10 +406,11 @@ final class RaidBossGameTests {
 			BastionBehemothEntity b = (BastionBehemothEntity) require(s, k);
 			b.setFortified(false);
 			b.setNoAi(false);
-			b.setHealth(700.0F);
+			b.setHealth(b.getMaxHealth() * 0.5F);
 		});
+		float half = server.computeOnServer(s -> require(s, k).getMaxHealth() * 0.5F);
 		context.waitTicks(BastionConfig.REGEN_DELAY + 30);
-		server.runOnServer(s -> check(require(s, k).getHealth() > 700.0F, "left alone, the Behemoth regenerates (" + require(s, k).getHealth() + ")"));
+		server.runOnServer(s -> check(require(s, k).getHealth() > half, "left alone, the Behemoth regenerates (" + require(s, k).getHealth() + ")"));
 	}
 
 	/** Damage a player-attributed 20-point blow does from in front ({@code dir} 1) or behind (-1) of the Behemoth. */

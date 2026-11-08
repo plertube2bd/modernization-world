@@ -16,7 +16,9 @@ public final class TempestConfig {
 	}
 
 	// =================================================================== body
-	public static final double MAX_HEALTH = 1024.0;
+	/** Each phase is its own pool, rising evenly: 100 HP in phase 1 to 400 in phase 5 (1,250 HP in all). */
+	public static final double FIRST_PHASE_HEALTH = 100.0;
+	public static final double LAST_PHASE_HEALTH = 400.0;
 	public static final double ATTACK_DAMAGE = 16.0;
 	public static final double MOVEMENT_SPEED = 0.30;
 	public static final double ARMOR = 10.0, ARMOR_TOUGHNESS = 4.0;
@@ -25,7 +27,8 @@ public final class TempestConfig {
 	/** Model is 3.1 blocks tall at scale 1; the phase table grows it x1.6 -> x2.2. */
 	public static final float BASE_SCALE = 1.6F, HITBOX_WIDTH = 3.0F, HITBOX_HEIGHT = 3.2F;
 	public static final int XP_REWARD = 2500;
-	public static final float REGEN_PER_SECOND = 8.0F;
+	/** Share of the phase's pool regained per second when left alone (never in the air). */
+	public static final float REGEN_SHARE_PER_SECOND = 0.008F;
 	public static final int REGEN_DELAY = 140;
 	public static final double BOSS_BAR_RANGE = 128.0;
 

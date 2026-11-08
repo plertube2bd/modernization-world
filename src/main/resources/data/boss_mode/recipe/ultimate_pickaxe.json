@@ -1,12 +1,15 @@
 {
-  "type": "minecraft:crafting_shapeless",
+  "type": "minecraft:crafting_shaped",
   "category": "equipment",
-  "ingredients": [
-    "boss_mode:shard_pickaxe",
-    "boss_mode:tempest_pickaxe",
-    "boss_mode:behemoth_pickaxe",
-    "boss_mode:void_pickaxe"
+  "pattern": [
+    "XXX",
+    " # ",
+    " # "
   ],
+  "key": {
+    "X": "boss_mode:ultimate_alloy",
+    "#": "minecraft:stick"
+  },
   "result": {
     "id": "boss_mode:ultimate_pickaxe",
     "count": 1

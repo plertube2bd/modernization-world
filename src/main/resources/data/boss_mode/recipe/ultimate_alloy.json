@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "misc",
+  "ingredients": [
+    "boss_mode:crystal_scale",
+    "boss_mode:tempest_scale",
+    "boss_mode:behemoth_plate",
+    "boss_mode:void_ingot"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_alloy",
+    "count": 1
+  }
+}

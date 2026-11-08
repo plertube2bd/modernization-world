@@ -10,12 +10,12 @@ Three raid bosses, a final boss, their minions and mid-boss, all built from the 
 
 | Entity | Model | Role |
 |---|---|---|
-| `boss_mode:shard_dragon` | BOSS.obj | boss - 10 phases × 1,024 HP, grows ×2.0 → ×4.0 |
+| `boss_mode:shard_dragon` | BOSS.obj | boss - 10 phases, 100 -> 300 HP, grows ×2.0 → ×4.0 |
 | `boss_mode:shard_warlord` | Mob2.obj | mid-boss (phases 5, 7, 9, 10) |
 | `boss_mode:shard_hound` / `shard_spitter` / `volatile_hound` | Mob.obj | minions (melee / ranged / explosive) |
-| `boss_mode:tempest_wyvern` | BOSS2.obj | flying raid boss - 5 phases x 1,024 HP, grows x1.6 -> x2.2, drops the **Tempest Eye** |
-| `boss_mode:bastion_behemoth` | BOSS3.obj | armoured raid boss - 8 phases x 1,024 HP, grows x1.0 -> x1.35, drops the **Behemoth Core** |
-| `boss_mode:void_sovereign` | Final BOSS.obj | **final boss** - 10 phases x 1,024 HP, grows x1.0 -> x1.5, Void Shield (Sovereign Shards), mace counters |
+| `boss_mode:tempest_wyvern` | BOSS2.obj | flying raid boss - 5 phases, 100 -> 400 HP, grows x1.6 -> x2.2, drops the **Tempest Eye** |
+| `boss_mode:bastion_behemoth` | BOSS3.obj | armoured raid boss - 8 phases, 100 -> 500 HP, grows x1.0 -> x1.35, drops the **Behemoth Core** |
+| `boss_mode:void_sovereign` | Final BOSS.obj | **final boss** - 10 phases, 100 -> 600 HP, grows x1.0 -> x1.5, Void Shield (Sovereign Shards), mace counters |
 
 ## Raid bosses: Tempest Wyvern and Bastion Behemoth
 
@@ -26,7 +26,7 @@ a 5-second ritual, and the land around turns into a themed arena. Each drops its
 |---|---|---|
 | Altar / structure | **Tempest Altar** in the **Tempest Aerie** (`/locate structure boss_mode:tempest_aerie`; mountains, hills, meadows, plains) | **Bastion Altar** in the **Bastion Den** (`/locate structure boss_mode:bastion_den`; badlands, savanna, desert, plains) |
 | Arena | 52 blocks, **Storm Reach** (grey-blue sky, rain, sparks): andesite and tuff, calcite / oxidized-copper rune rings, stone spires with lightning rods | 50 blocks, **Ember Waste** (orange sky, ash): basalt and blackstone, thin magma veins, shroomlight rings, basalt spires with campfires |
-| Pools | 5 x 1,024 HP, armour 10 | 8 x 1,024 HP, armour 18 / toughness 10, 20 HP/s regeneration after 6 s alone |
+| Pools | 100, 175, 250, 325, 400 HP; armour 10 | 100 rising to 500 HP; armour 18 / toughness 10, 2 % of the pool a second regenerated after 6 s alone |
 | Mechanic | **Flies**: circles 7 blocks above its target, lands every ~13 s for 5 s (or dive-bombs). No regeneration in the air. Taking 7 % of its pool in one flight (a few arrow / trident hits) **shoots it down** - it lies EXPOSED for ~3 s. | **Stone plating**: blows landing on its front (±55°) do half damage - hit its flanks and back (except while it recovers from an attack). **Fortify** (phase 3+): 4.5 s of x0.2 damage, 30 % of melee damage spiked back, then a shockwave. |
 | Patterns | Talon Strike, Tail Whip, Wind Gust, Feather Barrage (feathers can be punched back), Dive Bomb (air), Lightning Breath (tracking beam), Storm Bolts (marked lightning), Cyclone (roaming whirlwinds), Thunder Roar, Static Field, Summon (breezes, wraiths) | Maul, Tail Sweep (flanks / back only), Earthquake (jump it), Boulder Throw (molten boulder arcs), Rolling Charge (crushes blocks, ends dizzy), Fortify, Crystal Spikes (lines), Magma Breach (marked eruptions), Seismic Roar, Summon (hounds) |
 | Phases | 1: melee + gust / dive / feathers - 2: + lightning - 3: + cyclone, breezes - 4: + thunder roar, static field, a Warlord - 5: everything, enraged at 30 % | 1: maul, tail, quake, boulder - 2: + roll - 3: + fortify - 4: + spikes, hounds - 5: + magma - 6: + seismic roar, a Warlord - 7-8: everything, enraged at 30 % |
@@ -71,9 +71,8 @@ Numbers: `config/TempestConfig.java`, `config/BastionConfig.java`; phase tables:
 
 Each boss drops its material (6-10 crystal scales, 6-10 tempest scales, 7-11 behemoth plates, 8-12 void ingots) along with
 its trophy. The material makes a sword, pickaxe, axe, shovel, hoe and spear, and a helmet, chestplate, leggings and boots,
-in the vanilla shapes with sticks for handles. One piece of a kind from each boss forges (shapeless) the ultimate piece,
-which never wears out and keeps the highest level of every enchantment on the four (the higher of two that cannot go
-together). All the numbers are in `gear/BossTier.java`; set and sword effects in `gear/BossGear.java`.
+in the vanilla shapes with sticks for handles. One of each boss's material makes an **ultimate alloy** (shapeless), and
+the ultimate gear is made from the alloy in the same shapes; it never wears out. All the numbers are in `gear/BossTier.java`; set and sword effects in `gear/BossGear.java`.
 
 | | Netherite | Shard | Tempest | Behemoth | Void | Ultimate |
 |---|---|---|---|---|---|---|
@@ -89,7 +88,8 @@ Textures, armour layers and models come from `tools/boss_mode/gen_boss_gear.py`.
 
 ## Phases, flight and balance
 
-* 10 phases of 1,024 HP each. The dragon grows (x2.0 -> x4.0), its attack pool and minion roster shrink, and damage
+* 10 phases, each its own pool: 100 HP in phase 1 rising evenly to 300 in phase 10 (`PhaseHealth.java`; the
+  Sovereign's rise to 600, the Wyvern's to 400, the Behemoth's to 500; regeneration is a share of the pool). The dragon grows (x2.0 -> x4.0), its attack pool and minion roster shrink, and damage
   types get sealed one by one (`BossPhase.java`): phases 9-10 take only melee **on the ground**.
 * **Flight (phases 6-10):** the dragon alternates ground time and air time (6: 12 s air / 15 s ground ... 9-10: 10 s / 15 s).
   In the air it circles ~9 blocks above its target (out of melee reach) and only uses ranged patterns (volley, beam,
@@ -97,7 +97,7 @@ Textures, armour layers and models come from `tools/boss_mode/gen_boss_gear.py`.
   * While it flies, **projectiles always hurt it** - even in the melee-only phases - and the boss bar lights the bow icon.
   * Taking 6 % of its pool during one flight (~4 good arrow hits) **shoots it down**: it crashes and lies EXPOSED for 3 s.
   * It does not regenerate while flying. Takeoff, landing and crash have their own animations and small shockwaves.
-* **Phase 10** no longer requires the dragon to be EXPOSED: melee always hurts it on the ground (the old rule plus 12 HP/s
+* **Phase 10** no longer requires the dragon to be EXPOSED: melee always hurts it on the ground (the old rule plus 12 HP/s (now 1.2 % of the pool)
   regeneration made it practically unkillable). EXPOSED still doubles damage in phases 9-10; phase 10 damage x2.25 -> x2.10,
   cooldowns x0.55 -> x0.60.
 

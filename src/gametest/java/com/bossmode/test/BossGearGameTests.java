@@ -49,7 +49,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-/** The boss gear: what the bosses drop, the numbers on each piece, crafting, forging, set effects and sword hits. */
+/** The boss gear: what the bosses drop, the numbers on each piece, crafting, the ultimate alloy, set effects and sword hits. */
 public final class BossGearGameTests {
     private static final String ARENA = "redstone_transportation_test:arena";
     private static final BossTier[] TIERS = BossTier.values();
@@ -182,10 +182,8 @@ public final class BossGearGameTests {
                 helper.assertTrue(enchantment(helper, enchantments.get(kind)).value().isSupportedItem(piece),
                         tier + " " + kind + " cannot take " + enchantments.get(kind));
                 helper.assertTrue(piece.has(DataComponents.REPAIRABLE), tier + " " + kind + " cannot be repaired");
-                if (tier != BossTier.ULTIMATE) {
-                    helper.assertTrue(piece.isValidRepairItem(new ItemStack(BossGear.material(tier))),
-                            tier + " " + kind + " is not mended with its boss's material");
-                }
+                helper.assertTrue(piece.isValidRepairItem(new ItemStack(BossGear.material(tier))),
+                        tier + " " + kind + " is not mended with its tier's material");
             }
         }
         helper.succeed();
@@ -194,14 +192,14 @@ public final class BossGearGameTests {
     // ---- Crafting ---------------------------------------------------------------------------------
 
     @GameTest(structure = ARENA, maxTicks = 20)
-    public void everyBossPieceIsCraftedFromItsMaterial(GameTestHelper helper) {
+    public void everyPieceIsCraftedFromItsTiersMaterial(GameTestHelper helper) {
         Map<BossGearKind, String[]> shapes = Map.of(
                 BossGearKind.SWORD, new String[] {"X", "X", "#"}, BossGearKind.PICKAXE, new String[] {"XXX", " # ", " # "},
                 BossGearKind.AXE, new String[] {"XX", "X#", " #"}, BossGearKind.SHOVEL, new String[] {"X", "#", "#"},
                 BossGearKind.HOE, new String[] {"XX", " #", " #"}, BossGearKind.SPEAR, new String[] {"  X", " # ", "#  "},
                 BossGearKind.HELMET, new String[] {"XXX", "X X"}, BossGearKind.CHESTPLATE, new String[] {"X X", "XXX", "XXX"},
                 BossGearKind.LEGGINGS, new String[] {"XXX", "X X", "X X"}, BossGearKind.BOOTS, new String[] {"X X", "X X"});
-        for (BossTier tier : BossTier.BOSSES) {
+        for (BossTier tier : TIERS) {
             for (BossGearKind kind : BossGearKind.values()) {
                 String[] shape = shapes.get(kind);
                 List<ItemStack> grid = new ArrayList<>();
@@ -218,56 +216,20 @@ public final class BossGearGameTests {
     }
 
     @GameTest(structure = ARENA, maxTicks = 20)
-    public void oneOfEachBossPieceForgesTheUltimateOne(GameTestHelper helper) {
-        for (BossGearKind kind : BossGearKind.values()) {
-            List<ItemStack> four = new ArrayList<>();
-            for (BossTier tier : BossTier.BOSSES) four.add(stack(tier, kind));
-            ItemStack made = craft(helper, CraftingInput.of(2, 2, four));
-            helper.assertTrue(made.is(BossGear.gear(BossTier.ULTIMATE, kind)), "four boss " + kind + "s made " + made);
-        }
+    public void oneOfEachBossMaterialMakesTheUltimateAlloy(GameTestHelper helper) {
+        Item alloy = BossGear.material(BossTier.ULTIMATE);
+        List<ItemStack> four = new ArrayList<>();
+        for (BossTier tier : BossTier.BOSSES) four.add(new ItemStack(BossGear.material(tier)));
+        ItemStack made = craft(helper, CraftingInput.of(2, 2, four));
+        helper.assertTrue(made.is(alloy) && made.getCount() == 1, "one of each boss's material made " + made);
         // Two of one boss's and none of another's is not enough.
-        List<ItemStack> wrong = List.of(stack(BossTier.SHARD, BossGearKind.SWORD), stack(BossTier.SHARD, BossGearKind.SWORD),
-                stack(BossTier.BEHEMOTH, BossGearKind.SWORD), stack(BossTier.VOID, BossGearKind.SWORD));
-        helper.assertTrue(craft(helper, CraftingInput.of(2, 2, wrong)).isEmpty(), "two shard swords and no tempest sword forged one");
-        // Worn pieces are fine: what comes out is new and never wears out.
-        List<ItemStack> worn = new ArrayList<>();
-        for (BossTier tier : BossTier.BOSSES) {
-            ItemStack piece = stack(tier, BossGearKind.PICKAXE);
-            piece.setDamageValue(piece.getMaxDamage() - 1);
-            worn.add(piece);
-        }
-        ItemStack ultimate = craft(helper, CraftingInput.of(2, 2, worn));
-        helper.assertTrue(ultimate.is(BossGear.gear(BossTier.ULTIMATE, BossGearKind.PICKAXE)) && ultimate.has(DataComponents.UNBREAKABLE),
-                "worn pickaxes forged " + ultimate);
-        helper.succeed();
-    }
-
-    @GameTest(structure = ARENA, maxTicks = 20)
-    public void theUltimatePieceKeepsTheHighestEnchantments(GameTestHelper helper) {
-        Holder<Enchantment> sharpness = enchantment(helper, Enchantments.SHARPNESS);
-        Holder<Enchantment> smite = enchantment(helper, Enchantments.SMITE);
-        Holder<Enchantment> looting = enchantment(helper, Enchantments.LOOTING);
-        Holder<Enchantment> unbreaking = enchantment(helper, Enchantments.UNBREAKING);
-        Holder<Enchantment> fireAspect = enchantment(helper, Enchantments.FIRE_ASPECT);
-        ItemStack shard = stack(BossTier.SHARD, BossGearKind.SWORD);
-        shard.enchant(sharpness, 3);
-        shard.enchant(fireAspect, 1);
-        ItemStack tempest = stack(BossTier.TEMPEST, BossGearKind.SWORD);
-        tempest.enchant(sharpness, 5);
-        ItemStack behemoth = stack(BossTier.BEHEMOTH, BossGearKind.SWORD);
-        behemoth.enchant(looting, 2);
-        behemoth.enchant(fireAspect, 2);
-        ItemStack voidSword = stack(BossTier.VOID, BossGearKind.SWORD);
-        voidSword.enchant(smite, 4);
-        voidSword.enchant(unbreaking, 3);
-        ItemStack made = craft(helper, CraftingInput.of(2, 2, List.of(shard, tempest, behemoth, voidSword)));
-        helper.assertTrue(made.is(BossGear.gear(BossTier.ULTIMATE, BossGearKind.SWORD)), "the swords forged " + made);
-        var enchantments = made.getEnchantments();
-        helper.assertValueEqual(enchantments.getLevel(sharpness), 5, "sharpness on the ultimate sword");
-        helper.assertValueEqual(enchantments.getLevel(fireAspect), 2, "fire aspect on the ultimate sword");
-        helper.assertValueEqual(enchantments.getLevel(looting), 2, "looting on the ultimate sword");
-        helper.assertValueEqual(enchantments.getLevel(unbreaking), 3, "unbreaking on the ultimate sword");
-        helper.assertValueEqual(enchantments.getLevel(smite), 0, "smite, which cannot go with the higher sharpness");
+        List<ItemStack> wrong = List.of(new ItemStack(BossGear.material(BossTier.SHARD)), new ItemStack(BossGear.material(BossTier.SHARD)),
+                new ItemStack(BossGear.material(BossTier.BEHEMOTH)), new ItemStack(BossGear.material(BossTier.VOID)));
+        helper.assertTrue(craft(helper, CraftingInput.of(2, 2, wrong)).isEmpty(), "two crystal scales and no tempest scale made something");
+        // The four bosses' swords no longer make the ultimate one: that takes the alloy.
+        List<ItemStack> swords = new ArrayList<>();
+        for (BossTier tier : BossTier.BOSSES) swords.add(stack(tier, BossGearKind.SWORD));
+        helper.assertTrue(craft(helper, CraftingInput.of(2, 2, swords)).isEmpty(), "four boss swords still make something");
         helper.succeed();
     }
 

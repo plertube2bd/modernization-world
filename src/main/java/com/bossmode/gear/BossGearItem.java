@@ -37,10 +37,5 @@ public final class BossGearItem extends Item {
         } else if (kind == BossGearKind.SWORD) {
             tooltip.accept(Component.translatable("tooltip.boss_mode.gear.hit." + tier.id()).withStyle(ChatFormatting.LIGHT_PURPLE));
         }
-        if (tier == BossTier.ULTIMATE) {
-            tooltip.accept(Component.translatable("tooltip.boss_mode.gear.ultimate").withStyle(ChatFormatting.GOLD));
-        } else {
-            tooltip.accept(Component.translatable("tooltip.boss_mode.gear.forge").withStyle(ChatFormatting.DARK_GRAY));
-        }
     }
 }

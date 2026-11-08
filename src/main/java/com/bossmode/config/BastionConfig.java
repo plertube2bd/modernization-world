@@ -16,7 +16,9 @@ public final class BastionConfig {
 	}
 
 	// =================================================================== body
-	public static final double MAX_HEALTH = 1024.0;
+	/** Each phase is its own pool, rising evenly: 100 HP in phase 1 to 500 in phase 8 (2,400 HP in all). */
+	public static final double FIRST_PHASE_HEALTH = 100.0;
+	public static final double LAST_PHASE_HEALTH = 500.0;
 	public static final double ATTACK_DAMAGE = 26.0;
 	public static final double MOVEMENT_SPEED = 0.22;
 	public static final double ARMOR = 18.0, ARMOR_TOUGHNESS = 10.0;
@@ -25,7 +27,8 @@ public final class BastionConfig {
 	/** Model is 8 blocks long and 5 tall at scale 1; the phase table grows it to x1.35. */
 	public static final float BASE_SCALE = 1.0F, HITBOX_WIDTH = 5.0F, HITBOX_HEIGHT = 4.6F;
 	public static final int XP_REWARD = 3000;
-	public static final float REGEN_PER_SECOND = 20.0F;
+	/** Share of the phase's pool regained per second when left alone. */
+	public static final float REGEN_SHARE_PER_SECOND = 0.02F;
 	public static final int REGEN_DELAY = 120;
 	public static final double BOSS_BAR_RANGE = 128.0;
 

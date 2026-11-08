@@ -16,7 +16,9 @@ public final class SovereignConfig {
 	}
 
 	// =================================================================== body
-	public static final double MAX_HEALTH = 1024.0;
+	/** Each phase is its own pool, rising evenly: 100 HP in phase 1 to 600 in phase 10 (3,500 HP in all). */
+	public static final double FIRST_PHASE_HEALTH = 100.0;
+	public static final double LAST_PHASE_HEALTH = 600.0;
 	public static final double ATTACK_DAMAGE = 24.0;
 	public static final double MOVEMENT_SPEED = 0.30;
 	public static final double ARMOR = 20.0, ARMOR_TOUGHNESS = 12.0;
@@ -25,7 +27,8 @@ public final class SovereignConfig {
 	/** Model is 7.5 blocks tall at scale 1; the phase table grows it to x1.5 (hitbox 4.4 x 7.2 -> 6.6 x 10.8). */
 	public static final float BASE_SCALE = 1.0F, HITBOX_WIDTH = 4.4F, HITBOX_HEIGHT = 7.2F;
 	public static final int XP_REWARD = 6000;
-	public static final float REGEN_PER_SECOND = 10.0F;
+	/** Share of the phase's pool regained per second when left alone. */
+	public static final float REGEN_SHARE_PER_SECOND = 0.01F;
 	public static final int REGEN_DELAY = 120;
 	public static final float EXPLOSION_DAMAGE_MULTIPLIER = 0.5F;
 	public static final boolean CRUSHES_BLOCKS = true;

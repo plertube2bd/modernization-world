@@ -76,8 +76,8 @@ public class TempestWyvernEntity extends RaidBossEntity<TempestWyvernEntity> {
 	public static final String[] ACTION_CLIPS = {"talon_strike", "tail_whip", "wind_gust", "lightning_breath", "storm_bolts", "dive_bomb", "cyclone",
 			"feather_barrage", "thunder_roar", "static_field", "summon", "takeoff", "land", "crash"};
 
-	public static final RaidBossSpec SPEC = new RaidBossSpec("tempest_wyvern", TempestConfig.BASE_SCALE, TempestConfig.REGEN_PER_SECOND,
-			TempestConfig.REGEN_DELAY, TempestConfig.SPAWN_INTRO_TICKS, TempestConfig.SPAWN_ROAR_TICK, TempestConfig.PHASE_TRANSITION_TICKS,
+	public static final RaidBossSpec SPEC = new RaidBossSpec("tempest_wyvern", TempestConfig.BASE_SCALE, TempestConfig.REGEN_SHARE_PER_SECOND,
+			TempestConfig.REGEN_DELAY, TempestConfig.FIRST_PHASE_HEALTH, TempestConfig.LAST_PHASE_HEALTH, TempestConfig.SPAWN_INTRO_TICKS, TempestConfig.SPAWN_ROAR_TICK, TempestConfig.PHASE_TRANSITION_TICKS,
 			TempestConfig.TRANSITION_SHOCKWAVE_RADIUS, TempestConfig.DEATH_ANIMATION_TICKS, TempestConfig.DEATH_EXPLOSION_POWER,
 			TempestConfig.ENRAGE_HEALTH_THRESHOLD, TempestConfig.ENRAGE_DAMAGE_MULTIPLIER, TempestConfig.ENRAGE_SPEED_MULTIPLIER,
 			TempestConfig.ENRAGE_COOLDOWN_REDUCTION, TempestConfig.BOSS_BAR_RANGE, BossEvent.BossBarOverlay.NOTCHED_6, TempestConfig.NORMAL_ATTACK_CHANCE,
@@ -100,7 +100,7 @@ public class TempestWyvernEntity extends RaidBossEntity<TempestWyvernEntity> {
 
 	public static AttributeSupplier.Builder createAttributes() {
 		return Monster.createMonsterAttributes()
-				.add(Attributes.MAX_HEALTH, TempestConfig.MAX_HEALTH)
+				.add(Attributes.MAX_HEALTH, TempestConfig.FIRST_PHASE_HEALTH)
 				.add(Attributes.ATTACK_DAMAGE, TempestConfig.ATTACK_DAMAGE)
 				.add(Attributes.MOVEMENT_SPEED, TempestConfig.MOVEMENT_SPEED)
 				.add(Attributes.ARMOR, TempestConfig.ARMOR)
