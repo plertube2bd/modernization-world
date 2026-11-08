@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_pickaxe",
+    "boss_mode:tempest_pickaxe",
+    "boss_mode:behemoth_pickaxe",
+    "boss_mode:void_pickaxe",
+    "boss_mode:ultimate_pickaxe"
+  ]
+}

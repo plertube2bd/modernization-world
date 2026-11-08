@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "X X",
+    "XXX",
+    "XXX"
+  ],
+  "key": {
+    "X": "boss_mode:tempest_scale"
+  },
+  "result": {
+    "id": "boss_mode:tempest_chestplate",
+    "count": 1
+  }
+}

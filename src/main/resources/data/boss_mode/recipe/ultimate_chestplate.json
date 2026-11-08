@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_chestplate",
+    "boss_mode:tempest_chestplate",
+    "boss_mode:behemoth_chestplate",
+    "boss_mode:void_chestplate"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_chestplate",
+    "count": 1
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "XXX",
+    "X X"
+  ],
+  "key": {
+    "X": "boss_mode:void_ingot"
+  },
+  "result": {
+    "id": "boss_mode:void_helmet",
+    "count": 1
+  }
+}

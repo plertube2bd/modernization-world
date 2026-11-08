@@ -120,6 +120,23 @@
           }
         }
       ]
+    },
+    {
+      "rolls": 1,
+      "entries": [
+        {
+          "type": "minecraft:item",
+          "name": "boss_mode:tempest_scale",
+          "modifier": {
+            "type": "minecraft:set_count",
+            "count": {
+              "type": "minecraft:uniform",
+              "min": 6,
+              "max": 10
+            }
+          }
+        }
+      ]
     }
   ],
   "random_sequence": "boss_mode:entities/tempest_wyvern"

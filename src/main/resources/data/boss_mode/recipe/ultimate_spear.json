@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_spear",
+    "boss_mode:tempest_spear",
+    "boss_mode:behemoth_spear",
+    "boss_mode:void_spear"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_spear",
+    "count": 1
+  }
+}

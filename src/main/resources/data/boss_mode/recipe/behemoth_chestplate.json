@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "X X",
+    "XXX",
+    "XXX"
+  ],
+  "key": {
+    "X": "boss_mode:behemoth_plate"
+  },
+  "result": {
+    "id": "boss_mode:behemoth_chestplate",
+    "count": 1
+  }
+}

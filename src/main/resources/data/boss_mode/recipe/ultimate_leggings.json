@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_leggings",
+    "boss_mode:tempest_leggings",
+    "boss_mode:behemoth_leggings",
+    "boss_mode:void_leggings"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_leggings",
+    "count": 1
+  }
+}

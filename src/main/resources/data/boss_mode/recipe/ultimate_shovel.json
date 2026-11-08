@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_shovel",
+    "boss_mode:tempest_shovel",
+    "boss_mode:behemoth_shovel",
+    "boss_mode:void_shovel"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_shovel",
+    "count": 1
+  }
+}

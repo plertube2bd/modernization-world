@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_hoe",
+    "boss_mode:tempest_hoe",
+    "boss_mode:behemoth_hoe",
+    "boss_mode:void_hoe",
+    "boss_mode:ultimate_hoe"
+  ]
+}

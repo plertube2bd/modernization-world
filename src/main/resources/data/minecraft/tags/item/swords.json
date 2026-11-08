@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_sword",
+    "boss_mode:tempest_sword",
+    "boss_mode:behemoth_sword",
+    "boss_mode:void_sword",
+    "boss_mode:ultimate_sword"
+  ]
+}

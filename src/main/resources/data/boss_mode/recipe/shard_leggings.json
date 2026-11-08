@@ -1,0 +1,16 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "equipment",
+  "pattern": [
+    "XXX",
+    "X X",
+    "X X"
+  ],
+  "key": {
+    "X": "boss_mode:crystal_scale"
+  },
+  "result": {
+    "id": "boss_mode:shard_leggings",
+    "count": 1
+  }
+}

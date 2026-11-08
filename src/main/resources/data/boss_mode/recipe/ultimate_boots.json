@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_boots",
+    "boss_mode:tempest_boots",
+    "boss_mode:behemoth_boots",
+    "boss_mode:void_boots"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_boots",
+    "count": 1
+  }
+}

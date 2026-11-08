@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_chestplate",
+    "boss_mode:tempest_chestplate",
+    "boss_mode:behemoth_chestplate",
+    "boss_mode:void_chestplate",
+    "boss_mode:ultimate_chestplate"
+  ]
+}

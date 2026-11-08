@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_axe",
+    "boss_mode:tempest_axe",
+    "boss_mode:behemoth_axe",
+    "boss_mode:void_axe",
+    "boss_mode:ultimate_axe"
+  ]
+}

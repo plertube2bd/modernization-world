@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_sword",
+    "boss_mode:tempest_sword",
+    "boss_mode:behemoth_sword",
+    "boss_mode:void_sword"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_sword",
+    "count": 1
+  }
+}

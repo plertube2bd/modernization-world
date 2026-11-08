@@ -1,0 +1,14 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "category": "equipment",
+  "ingredients": [
+    "boss_mode:shard_axe",
+    "boss_mode:tempest_axe",
+    "boss_mode:behemoth_axe",
+    "boss_mode:void_axe"
+  ],
+  "result": {
+    "id": "boss_mode:ultimate_axe",
+    "count": 1
+  }
+}

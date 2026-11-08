@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "boss_mode:ultimate"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "boss_mode:ultimate"
+      }
+    ]
+  }
+}

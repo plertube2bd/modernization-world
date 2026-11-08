@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_leggings",
+    "boss_mode:tempest_leggings",
+    "boss_mode:behemoth_leggings",
+    "boss_mode:void_leggings",
+    "boss_mode:ultimate_leggings"
+  ]
+}

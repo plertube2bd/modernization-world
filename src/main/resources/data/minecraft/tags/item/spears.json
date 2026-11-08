@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_spear",
+    "boss_mode:tempest_spear",
+    "boss_mode:behemoth_spear",
+    "boss_mode:void_spear",
+    "boss_mode:ultimate_spear"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_shovel",
+    "boss_mode:tempest_shovel",
+    "boss_mode:behemoth_shovel",
+    "boss_mode:void_shovel",
+    "boss_mode:ultimate_shovel"
+  ]
+}

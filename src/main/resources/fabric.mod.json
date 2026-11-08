@@ -25,6 +25,7 @@
   "mixins": [
     "analog_alu.mixins.json",
     "redstone_transportation.mixins.json",
+    "boss_mode.mixins.json",
     {
       "config": "boss_mode.client.mixins.json",
       "environment": "client"

@@ -2,6 +2,11 @@
   "replace": false,
   "values": [
     "analog_alu:sneakers",
-    "analog_alu:insulated_boots"
+    "analog_alu:insulated_boots",
+    "boss_mode:shard_boots",
+    "boss_mode:tempest_boots",
+    "boss_mode:behemoth_boots",
+    "boss_mode:void_boots",
+    "boss_mode:ultimate_boots"
   ]
 }

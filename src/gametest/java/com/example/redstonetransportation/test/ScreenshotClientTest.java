@@ -122,6 +122,7 @@ public final class ScreenshotClientTest implements FabricClientGameTest {
                         case "power" -> testPowerMarks(context, world);
                         case "electric" -> testElectricity(context, world);
                         case "music" -> testMusicDisc(context, world);
+                        case "gear" -> testBossGear(context, world);
                         case "none" -> { }
                         default -> throw new AssertionError("no screenshot scene called " + part);
                     }
@@ -1000,6 +1001,26 @@ public final class ScreenshotClientTest implements FabricClientGameTest {
      * A disc put in a jukebox with a real click, which starts the song on the client, and an armor stand
      * in sneakers beside it.
      */
+    /** The five boss sets on armour stands, each with its sword and spear, seen from the front and the back. */
+    private static void testBossGear(ClientGameTestContext context, TestSingleplayerContext world) {
+        int x = 290;
+        int z = 10;
+        world.getServer().runOnServer(server -> clearGround(server.overworld(), x - 4, x + 14, z - 8, z + 8));
+        String[] tiers = {"shard", "tempest", "behemoth", "void", "ultimate"};
+        for (int i = 0; i < tiers.length; i++) {
+            String t = "boss_mode:" + tiers[i] + "_";
+            world.getServer().runCommand("summon minecraft:armor_stand " + (x + i * 2.5D + 0.5D) + " " + RAIL_Y + " " + (z + 0.5D)
+                    + " {ShowArms:1b,NoGravity:1b,NoBasePlate:1b,Rotation:[0f,0f],equipment:{"
+                    + "head:{id:\"" + t + "helmet\",count:1},chest:{id:\"" + t + "chestplate\",count:1},"
+                    + "legs:{id:\"" + t + "leggings\",count:1},feet:{id:\"" + t + "boots\",count:1},"
+                    + "mainhand:{id:\"" + t + "sword\",count:1},offhand:{id:\"" + t + "spear\",count:1}}}");
+        }
+        double middle = x + 5.5D;
+        shot(context, world, "boss_gear_front", middle, RAIL_Y + 1.6D, z + 6.0D, middle, RAIL_Y + 1.0D, z + 0.5D);
+        shot(context, world, "boss_gear_back", middle, RAIL_Y + 1.6D, z - 5.0D, middle, RAIL_Y + 1.0D, z + 0.5D);
+        world.getServer().runCommand("kill @e[type=minecraft:armor_stand]");
+    }
+
     private static void testMusicDisc(ClientGameTestContext context, TestSingleplayerContext world) {
         int x = 260;
         int z = 10;

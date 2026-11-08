@@ -67,6 +67,26 @@ Numbers: `config/TempestConfig.java`, `config/BastionConfig.java`; phase tables:
 * Loot: 3-5 nether stars, netherite ingots, diamond blocks, enchanted golden apples, totems, echo shards, 50 % elytra,
   6,000 XP. All numbers in `config/SovereignConfig.java`.
 
+## Boss gear: drops, tools, weapons and armour
+
+Each boss drops its material (6-10 crystal scales, 6-10 tempest scales, 7-11 behemoth plates, 8-12 void ingots) along with
+its trophy. The material makes a sword, pickaxe, axe, shovel, hoe and spear, and a helmet, chestplate, leggings and boots,
+in the vanilla shapes with sticks for handles. One piece of a kind from each boss forges (shapeless) the ultimate piece,
+which never wears out and keeps the highest level of every enchantment on the four (the higher of two that cannot go
+together). All the numbers are in `gear/BossTier.java`; set and sword effects in `gear/BossGear.java`.
+
+| | Netherite | Shard | Tempest | Behemoth | Void | Ultimate |
+|---|---|---|---|---|---|---|
+| Sword damage / speed | 8 / 1.6 | 9 / 1.6 | 10 / 1.8 | 11 / 1.4 | 12 / 1.6 | 14 / 1.7 |
+| Axe / spear damage | 10 / 5 | 11 / 6 | 12 / 7 | 13 / 8 | 14 / 9 | 16 / 11 |
+| Mining speed / uses | 9 / 2031 | 10 / 2600 | 11 / 3000 | 11 / 3800 | 13 / 4500 | 15 / unbreakable |
+| Armour / toughness / knockback res. | 3-8-6-3 / 3 / 0.1 | 3-8-7-3 / 3.5 / 0.1 | 3-9-7-3 / 4 / 0.05 | 4-9-7-4 / 5 / 0.2 | 4-10-8-4 / 6 / 0.15 | 5-10-8-5 / 7 / 0.25 |
+
+Full sets: shard - fire resistance, 2 damage back to melee attackers; tempest - 10 % faster, half fall damage; behemoth -
+30 % less from explosions; void - 4 more max health, no wither; ultimate - all of them and 8 more max health. Swords on
+hit: shard - fire 3 s; tempest - lightning one hit in ten; behemoth - thrown back; void - wither 2 s; ultimate - all.
+Textures, armour layers and models come from `tools/boss_mode/gen_boss_gear.py`.
+
 ## Phases, flight and balance
 
 * 10 phases of 1,024 HP each. The dragon grows (x2.0 -> x4.0), its attack pool and minion roster shrink, and damage

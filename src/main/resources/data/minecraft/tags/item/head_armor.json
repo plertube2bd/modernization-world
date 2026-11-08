@@ -1,0 +1,10 @@
+{
+  "replace": false,
+  "values": [
+    "boss_mode:shard_helmet",
+    "boss_mode:tempest_helmet",
+    "boss_mode:behemoth_helmet",
+    "boss_mode:void_helmet",
+    "boss_mode:ultimate_helmet"
+  ]
+}

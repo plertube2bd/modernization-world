@@ -22,7 +22,8 @@
       "com.example.redstonetransportation.test.OilGameTests",
       "com.example.redstonetransportation.test.CarGameTests",
       "com.example.redstonetransportation.test.ModernGameTests",
-      "com.example.modernizationworld.test.RedcoatGameTests"
+      "com.example.modernizationworld.test.RedcoatGameTests",
+      "com.bossmode.test.BossGearGameTests"
     ],
     "fabric-client-gametest": [
       "com.example.redstonetransportation.test.ScreenshotClientTest",

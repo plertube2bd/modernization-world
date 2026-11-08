@@ -29,6 +29,7 @@ public class BossMode implements ModInitializer {
 		ModEntities.init();
 		ModBlocks.init();
 		ModItems.init();
+		com.bossmode.gear.BossGear.init();
 		ShardDrops.init();
 		ArenaTerraformer.init();
 		LOGGER.info("BOSS Mode initialised: Shard Dragon registered as {}", ModEntities.SHARD_DRAGON_ID);
