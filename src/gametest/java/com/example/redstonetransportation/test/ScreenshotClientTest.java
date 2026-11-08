@@ -123,6 +123,7 @@ public final class ScreenshotClientTest implements FabricClientGameTest {
                         case "electric" -> testElectricity(context, world);
                         case "music" -> testMusicDisc(context, world);
                         case "gear" -> testBossGear(context, world);
+                        case "spear" -> testSpears(context, world);
                         case "none" -> { }
                         default -> throw new AssertionError("no screenshot scene called " + part);
                     }
@@ -1001,6 +1002,51 @@ public final class ScreenshotClientTest implements FabricClientGameTest {
      * A disc put in a jukebox with a real click, which starts the song on the client, and an armor stand
      * in sneakers beside it.
      */
+    /**
+     * The netherite spear and two boss spears side by side: held, mid-jab and charging in first person, then from the
+     * front in third person. The boss spears should sit in the hand and move exactly like the vanilla one.
+     */
+    private static void testSpears(ClientGameTestContext context, TestSingleplayerContext world) {
+        int x = 320;
+        int z = 10;
+        world.getServer().runOnServer(server -> clearGround(server.overworld(), x - 6, x + 6, z - 6, z + 12));
+        world.getServer().runCommand("tp @p " + (x + 0.5D) + " " + RAIL_Y + " " + (z + 0.5D) + " facing " + (x + 0.5D) + " " + (RAIL_Y + 1.6D) + " " + (z + 10.5D));
+        world.getServer().runCommand("clear @p");
+        String[] spears = {"minecraft:netherite_spear", "boss_mode:ultimate_spear", "boss_mode:void_spear"};
+        String[] names = {"netherite", "ultimate", "void"};
+        for (int i = 0; i < spears.length; i++) {
+            world.getServer().runCommand("item replace entity @p hotbar." + i + " with " + spears[i]);
+        }
+        context.runOnClient(client -> client.gui.hud.toggle());
+        for (int i = 0; i < spears.length; i++) {
+            final int slot = i;
+            context.runOnClient(client -> client.player.getInventory().setSelectedSlot(slot));
+            // Long enough for the spear to rise all the way after the switch.
+            context.waitTicks(50);
+            world.getConnection().waitForChunksRender();
+            context.takeScreenshot(TestScreenshotOptions.of("spear_" + names[i] + "_held"));
+            context.getInput().pressKey(options -> options.keyAttack);
+            context.waitTicks(2);
+            context.takeScreenshot(TestScreenshotOptions.of("spear_" + names[i] + "_jab"));
+            context.waitTicks(50);
+            context.getInput().holdKey(options -> options.keyUse);
+            context.waitTicks(12);
+            context.takeScreenshot(TestScreenshotOptions.of("spear_" + names[i] + "_charge"));
+            context.getInput().releaseKey(options -> options.keyUse);
+            context.waitTicks(10);
+        }
+        context.runOnClient(client -> client.options.setCameraType(CameraType.THIRD_PERSON_FRONT));
+        for (int i = 0; i < spears.length; i++) {
+            final int slot = i;
+            context.runOnClient(client -> client.player.getInventory().setSelectedSlot(slot));
+            context.waitTicks(12);
+            context.takeScreenshot(TestScreenshotOptions.of("spear_" + names[i] + "_third_person"));
+        }
+        context.runOnClient(client -> client.options.setCameraType(CameraType.FIRST_PERSON));
+        context.runOnClient(client -> client.gui.hud.toggle());
+        world.getServer().runCommand("clear @p");
+    }
+
     /** The five boss sets on armour stands, each with its sword and spear, seen from the front and the back. */
     private static void testBossGear(ClientGameTestContext context, TestSingleplayerContext world) {
         int x = 290;

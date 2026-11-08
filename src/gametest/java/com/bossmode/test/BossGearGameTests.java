@@ -7,6 +7,7 @@ import com.bossmode.registry.ModEntities;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
+import net.minecraft.core.component.DataComponentType;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.gametest.framework.GameTestHelper;
@@ -135,6 +136,28 @@ public final class BossGearGameTests {
                 }
                 helper.assertValueEqual(piece.getOrDefault(DataComponents.ENCHANTABLE, null).value(), enchantability[i], tier + " " + kind + " enchantability");
             }
+        }
+        helper.succeed();
+    }
+
+    /** A boss spear jabs, charges and reaches exactly like the netherite spear; only its damage and durability differ. */
+    @GameTest(structure = ARENA, maxTicks = 20)
+    public void bossSpearsHandleLikeTheNetheriteSpear(GameTestHelper helper) {
+        ItemStack netherite = new ItemStack(Items.NETHERITE_SPEAR);
+        List<DataComponentType<?>> handling = List.of(DataComponents.KINETIC_WEAPON, DataComponents.PIERCING_WEAPON,
+                DataComponents.ATTACK_RANGE, DataComponents.MINIMUM_ATTACK_CHARGE, DataComponents.ATTACK_ANIMATION,
+                DataComponents.USE_EFFECTS, DataComponents.WEAPON, DataComponents.DAMAGE_TYPE);
+        for (DataComponentType<?> type : handling) {
+            helper.assertTrue(netherite.has(type), "the netherite spear has no " + type);
+        }
+        double speed = attribute(netherite, Attributes.ATTACK_SPEED, 4.0D, EquipmentSlot.MAINHAND);
+        for (BossTier tier : TIERS) {
+            ItemStack spear = stack(tier, BossGearKind.SPEAR);
+            for (DataComponentType<?> type : handling) {
+                helper.assertTrue(java.util.Objects.equals(spear.get(type), netherite.get(type)),
+                        tier + " spear " + type + ": " + spear.get(type) + ", the netherite spear's: " + netherite.get(type));
+            }
+            close(helper, attribute(spear, Attributes.ATTACK_SPEED, 4.0D, EquipmentSlot.MAINHAND), speed, tier + " spear attack speed");
         }
         helper.succeed();
     }

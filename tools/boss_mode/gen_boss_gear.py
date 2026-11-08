@@ -340,11 +340,17 @@ def icon(rows, colors):
 # ---- Armour as worn: 64 x 32, the vanilla humanoid layout ------------------------------------------
 
 def spear_in_hand(colors):
-    """32 x 32: a long shaft from the bottom left, the head at the top right, outlined."""
+    """
+    32 x 32, laid out like the vanilla in-hand spears: the head at the top left, the shaft down to the bottom right.
+    (The vanilla spear_in_hand transforms expect this; drawn the other way round, the spear is held crooked and its
+    jab looks wrong.) Drawn head-top-right, then mirrored.
+    """
     grid = [[None] * 32 for _ in range(32)]
-    for t in range(22):
-        x, y = 2 + t, 29 - t
-        grid[y][x] = "h" if t < 4 else "H"
+    # The shaft: three pixels a row like the vanilla ones, a light core between darker edges, no outline.
+    for t in range(23):
+        x, y = 2 + t, 30 - t
+        grid[y][x - 1] = "h"
+        grid[y][x] = "h" if t < 3 else "H"
         grid[y][x + 1] = "h"
     grid[8][23], grid[8][24], grid[7][23] = "A", "A", "A"
     for k in range(7):
@@ -358,14 +364,15 @@ def spear_in_hand(colors):
                 grid[y - 1][x - 1] = "4"
                 grid[y + 1][x + 1] = "1"
     out = [[(0, 0, 0, 0)] * 32 for _ in range(32)]
+    head = set("1234A")
     for y in range(32):
         for x in range(32):
             if grid[y][x]:
                 out[y][x] = (*colors[grid[y][x]], 255)
-            elif any(0 <= y + dy < 32 and 0 <= x + dx < 32 and grid[y + dy][x + dx]
+            elif any(0 <= y + dy < 32 and 0 <= x + dx < 32 and (grid[y + dy][x + dx] or "") in head
                      for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
                 out[y][x] = (*OUTLINE, 255)
-    return out
+    return [row[::-1] for row in out]
 
 
 def armour_layer(tier: str, leggings: bool):
