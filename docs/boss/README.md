@@ -84,9 +84,10 @@ the ultimate gear is made from the alloy in the same shapes; it never wears out.
 Full sets: shard - fire resistance, 2 damage back to melee attackers; tempest - 10 % faster, half fall damage; behemoth -
 30 % less from explosions; void - 4 more max health, no wither; ultimate - all of them and 8 more max health. Swords on
 hit: shard - fire 3 s; tempest - lightning one hit in ten; behemoth - thrown back; void - wither 2 s; ultimate - all.
-The textures keep the vanilla shapes and shading (diamond tools and spear; diamond armour for shard, tempest and
-ultimate, netherite armour for behemoth and void) with each shade swapped for the tier's own colour ramp;
-`tools/boss_mode/gen_boss_gear.py` makes them from the Minecraft client jar on the machine, along with the models.
+Tools and the spear keep the vanilla diamond shapes and shading in the tier's colours; each tier's sword is drawn
+on its own; all armour is diamond-shaped with the tier's marks over it (crystal glints, lightning, magma cracks, runes,
+gems); the ultimate gear runs through the four bosses' colours like the ultimate alloy. `tools/boss_mode/gen_boss_gear.py`
+makes them from the Minecraft client jar on the machine, along with the models.
 
 ## Phases, flight and balance
 

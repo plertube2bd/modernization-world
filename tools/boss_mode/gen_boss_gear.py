@@ -38,27 +38,27 @@ def rgb(*colours: str):
 # shape the tier wears.
 TIERS = {
     "shard": dict(
-        material="crystal_scale", boss="shard_dragon", drops=(6, 10), armour="diamond",
+        material="crystal_scale", boss="shard_dragon", drops=(6, 10),
         metal=rgb("#160a2a", "#35186a", "#6a34b4", "#a468e6", "#d7a6f8", "#fff0ff"),
         handle=rgb("#281e0b", "#493615", "#684e1e", "#896727"),
         accent=rgb("#5e1548", "#b0307f", "#ff74c4", "#ffc2e6")),
     "tempest": dict(
-        material="tempest_scale", boss="tempest_wyvern", drops=(6, 10), armour="diamond",
+        material="tempest_scale", boss="tempest_wyvern", drops=(6, 10),
         metal=rgb("#070f1c", "#152e4e", "#2a5b8c", "#4f93c8", "#96d0ee", "#f4fdff"),
         handle=rgb("#10141a", "#232b36", "#394554", "#536274"),
         accent=rgb("#6e5208", "#c79a16", "#ffe256", "#fff8b8")),
     "behemoth": dict(
-        material="behemoth_plate", boss="bastion_behemoth", drops=(7, 11), armour="netherite",
+        material="behemoth_plate", boss="bastion_behemoth", drops=(7, 11),
         metal=rgb("#0d0807", "#2a1610", "#562616", "#96441a", "#de8426", "#ffdc82"),
         handle=rgb("#0c0908", "#1e1512", "#33241d", "#4b362b"),
         accent=rgb("#4f1006", "#a0260c", "#e4441e", "#ff9050")),
     "void": dict(
-        material="void_ingot", boss="void_sovereign", drops=(8, 12), armour="netherite",
+        material="void_ingot", boss="void_sovereign", drops=(8, 12),
         metal=rgb("#040207", "#100820", "#22103e", "#3e1c70", "#7636ba", "#e692ff"),
         handle=rgb("#06040a", "#120c1c", "#20162e", "#322446"),
         accent=rgb("#560a44", "#a81a86", "#ff3cc8", "#ffa4e6")),
     "ultimate": dict(
-        material="ultimate_alloy", boss=None, drops=None, armour="diamond",
+        material="ultimate_alloy", boss=None, drops=None,
         metal=rgb("#2a1604", "#70460e", "#bd8420", "#f2c440", "#fdec98", "#f0ffff"),
         handle=rgb("#5a4a2c", "#9c8858", "#d6c79a", "#f8f1da"),
         accent=rgb("#0a4f62", "#149cb8", "#5ae6ff", "#d0faff")),
@@ -76,8 +76,8 @@ MATERIAL_SHAPES = {
     "ultimate_alloy": ("netherite_ingot", (0.1, 1.0)),
 }
 # How much of the ramp the armour as worn uses. Diamond's is drawn without dark shades; it gets some depth here.
-WORN_SPAN = {"diamond": (0.36, 1.0), "netherite": (0.06, 0.9)}
-ICON_SPAN = {"diamond": (0.0, 1.0), "netherite": (0.0, 0.88)}
+WORN_SPAN = (0.3, 1.0)
+ICON_SPAN = (0.0, 1.0)
 WORN_LAYERS = ["humanoid", "humanoid_leggings", "humanoid_baby"]
 
 
@@ -225,15 +225,18 @@ def spread(shapes, part_of):
     return found
 
 
-def recolour(rows, colours, part_of, shades, span=(0.0, 1.0)):
+def recolour(rows, colours, part_of, shades, span=(0.0, 1.0), metal=None, pattern=None):
     """
     The same picture in a tier's colours: each pixel keeps its place between its part's darkest and lightest shade,
     and takes the colour that far up the tier's ramp for that part (within span for the metal).
+    metal(t, x, y, w, h) can colour the metal instead of the ramp; pattern(t, x, y) can lay a tier's marks over the
+    metal's middle shades (outlines and shine stay as they are).
     """
+    h, w = len(rows), len(rows[0])
     out = []
-    for row in rows:
+    for y, row in enumerate(rows):
         line = []
-        for colour in row:
+        for x, colour in enumerate(row):
             if not colour[3]:
                 line.append((0, 0, 0, 0))
                 continue
@@ -242,35 +245,169 @@ def recolour(rows, colours, part_of, shades, span=(0.0, 1.0)):
             t = (lum(colour) - low) / (high - low) if high > low else 1.0
             if part == "metal":
                 t = span[0] + (span[1] - span[0]) * t
-            line.append((*ramp(colours[part], t), colour[3]))
+                mark = pattern(t, x, y) if pattern and 0.3 < t < 0.88 else None
+                rgb_ = mark or (metal(t, x, y, w, h) if metal else ramp(colours[part], t))
+            else:
+                rgb_ = ramp(colours[part], t)
+            line.append((*rgb_, colour[3]))
         out.append(line)
     return out
+
+
+ALLOY_ORDER = ["behemoth", "shard", "void", "tempest"]    # by hue, so each colour runs cleanly into the next
+
+
+def alloy_colour(t: float, along: float, gold_below: float = 0.3):
+    """Shade t of the ultimate alloy, a share `along` of the way from one end to the other; gold in the darkest and brightest shades."""
+    pos = min(1.0, max(0.0, along)) * (len(ALLOY_ORDER) - 1)
+    i = min(int(pos), len(ALLOY_ORDER) - 2)
+    a, b = (ramp(TIERS[ALLOY_ORDER[k]]["metal"], 0.45 + 0.55 * t) for k in (i, i + 1))
+    mixed = tuple(round(p + (q - p) * (pos - i)) for p, q in zip(a, b))
+    gold = ramp(TIERS["ultimate"]["metal"], t)
+    weight = 1.0 if t < gold_below else 0.0 if t < 0.8 else (t - 0.8) / 0.2
+    return tuple(round(m + (g - m) * weight) for m, g in zip(mixed, gold))
 
 
 def alloy(rows, shades, span):
     """The ultimate alloy: an ingot that runs through the four bosses' colours from one end to the other, edged in gold."""
-    order = ["behemoth", "shard", "void", "tempest"]    # by hue, so each colour runs cleanly into the next
     xs = [x for row in rows for x, colour in enumerate(row) if colour[3]]
     left, right = min(xs), max(xs)
-    out = []
-    for row in rows:
-        line = []
-        for x, colour in enumerate(row):
-            if not colour[3]:
-                line.append((0, 0, 0, 0))
-                continue
-            low, high = shades["metal"]
-            t = span[0] + (span[1] - span[0]) * ((lum(colour) - low) / (high - low))
-            along = (x - left) / (right - left) * (len(order) - 1)
-            i = min(int(along), len(order) - 2)
-            a, b = (ramp(TIERS[order[k]]["metal"], 0.45 + 0.55 * t) for k in (i, i + 1))
-            mixed = tuple(round(p + (q - p) * (along - i)) for p, q in zip(a, b))
-            gold = ramp(TIERS["ultimate"]["metal"], t)
-            # The darkest shades (the outline) and the brightest (the shine) are the ultimate gold.
-            weight = 1.0 if t < 0.3 else 0.0 if t < 0.8 else (t - 0.8) / 0.2
-            line.append((*(round(m + (g - m) * weight) for m, g in zip(mixed, gold)), colour[3]))
-        out.append(line)
-    return out
+    return recolour(rows, TIERS["ultimate"], all_metal, shades, span,
+                    metal=lambda t, x, y, w, h: alloy_colour(t, (x - left) / (right - left)))
+
+
+def tier_pattern(tier: str, size: int):
+    """
+    Each tier's marks on its armour, so the sets differ by more than colour: crystal glints (shard), lightning (tempest),
+    glowing cracks (behemoth), runes (void), gems (ultimate). size is 16 for an icon, 64 for armour as worn.
+    """
+    accent = TIERS[tier]["accent"]
+    fine = size <= 16
+
+    def glow(t):
+        return ramp(accent, 0.62 + 0.38 * t)
+
+    if tier == "shard":
+        def mark(t, x, y):
+            return glow(t) if (x + y) % (5 if fine else 6) == 0 and (x - y) % (2 if fine else 4) == 0 else None
+    elif tier == "tempest":
+        def mark(t, x, y):
+            zig = (0, 1, 2, 1)[x % 4]
+            return glow(t) if y % (7 if fine else 8) == zig else None
+    elif tier == "behemoth":
+        def mark(t, x, y):
+            return glow(t) if (x * 3 + y * 7) % 11 == 0 or (x * 5 + y * 2) % 13 == 0 else None
+    elif tier == "void":
+        def mark(t, x, y):
+            return glow(t) if x % 5 == 2 and y % 4 != 0 and (x // 5 + y // 4) % 2 == 0 else None
+    else:
+        def mark(t, x, y):
+            return glow(t) if x % 7 == 3 and y % 6 == 3 else None
+    return mark
+
+
+# ---- Swords: each tier its own blade ------------------------------------------------------------------
+
+RUBY = rgb("#5a0a12", "#a8161e", "#ec3a3a", "#ffb0a0")
+
+
+def sword(tier: str):
+    """
+    A 16 x 16 sword drawn for the tier, laid out like the vanilla ones (pommel bottom left, tip top right). a runs along
+    the sword (-15 at the bottom left corner, 15 at the top right), p across it (0 on the diagonal, < 0 its upper side;
+    a + p is always odd, so cells across the blade alternate between rows).
+    """
+    c = TIERS[tier]
+    metal, accent, handle = c["metal"], c["accent"], c["handle"]
+    gold = TIERS["ultimate"]["metal"]
+    cells, loose = {}, {}
+    tip = 13
+
+    def nearest(target, a, w):
+        options = [p for p in range(-w, w + 1) if (a + p) % 2]
+        return min(options, key=lambda p: (abs(p - target), p)) if options else None
+
+    def steel(t):
+        return alloy_colour(t, 0.5) if tier == "ultimate" else ramp(metal, t)
+
+    for y in range(16):
+        for x in range(16):
+            a, p = x - y, x + y - 15
+            col = None
+            # Grip: wrapped, light on its upper side; pommel below it.
+            if -10 <= a <= -7 and abs(p) <= 1:
+                col = ramp(handle, (0.85 if p < 0 else 0.25 if p > 0 else 0.55) - (0.2 if a == -8 else 0))
+            elif -13 <= a <= -11 and abs(p) <= 1:
+                col = ramp(RUBY if tier == "ultimate" else accent, 0.85 if p < 0 else 0.45 if p > 0 else 0.65)
+
+            if tier == "shard":
+                # A crystal blade with shards breaking out of both edges; a pink crossguard set with a gem.
+                w = 2 if a <= 9 else 1 if a <= 12 else 0
+                if -4 <= a <= tip and abs(p) <= w:
+                    col = ramp(metal, 1.0 if p == -w else 0.82 if p < 0 else 0.6 if p == 0 or p < w else 0.38)
+                for a0, side in ((-1, -1), (5, -1), (2, 1), (8, 1)):
+                    if a0 <= a <= a0 + 1 and side * p in (3, 4) and (a + p) % 2:
+                        col = ramp(accent, 0.95 if side < 0 else 0.6)
+                if a in (-6, -5) and abs(p) <= 4:
+                    col = ramp(accent, 1.0) if abs(p) <= 1 and a == -5 else ramp(accent, 0.75 if p < 0 else 0.5)
+            elif tier == "tempest":
+                # A slender blade with lightning down its middle; a guard of swept-back wings with golden tips.
+                w = 1 if a <= 12 else 0
+                if -4 <= a <= tip and abs(p) <= w:
+                    col = ramp(metal, 0.95 if p < 0 else 0.55)
+                    if p == 0 or (a % 4 == 1 and p == -1) or (a % 4 == 3 and p == 1):
+                        col = ramp(accent, 0.85)
+                if (a == -5 and abs(p) <= 3) or (a == -6 and 2 <= abs(p) <= 5) or (a == -7 and 4 <= abs(p) <= 6):
+                    col = ramp(accent, 0.9) if abs(p) >= 5 else ramp(metal, 0.85 if p < 0 else 0.6)
+            elif tier == "behemoth":
+                # A broad cleaver of dark stone, a glowing magma crack along it; a heavy riveted guard.
+                w = 2 if a <= 9 else 1 if a <= 11 else -1
+                if -4 <= a <= 11 and abs(p) <= w:
+                    col = ramp(metal, 0.62 if p == -w else 0.45 if p < 0 else 0.34 if p < w else 0.22)
+                    if (p == 0 and a % 3 != 0) or (a % 6 == 0 and p == -1) or (a % 6 == 3 and p == 1):
+                        col = ramp(accent, 0.95)
+                if -6 <= a <= -5 and abs(p) <= 5:
+                    col = ramp(accent, 0.8) if abs(p) in (2, 5) else ramp(metal, 0.55 if p < 0 else 0.4)
+            elif tier == "void":
+                # A dark blade edged in magenta light, motes of void drifting off it; horned guard.
+                w = 2 if a <= 10 else 1 if a <= 12 else 0
+                if -4 <= a <= tip and abs(p) <= w:
+                    col = ramp(accent, 0.95 if p < 0 else 0.6) if abs(p) == w or (w == 2 and abs(p) == 1 and a % 2 == 0 and False)                         else ramp(metal, 0.45 if p <= 0 else 0.3)
+                if (a == -5 and abs(p) <= 3) or (a == -6 and 3 <= abs(p) <= 4) or (a == -7 and 4 <= abs(p) <= 5):
+                    col = ramp(accent, 0.8) if abs(p) >= 4 else ramp(metal, 0.55)
+            else:
+                # Gold-edged, its blade running through the four bosses' colours; a ruby in a gold guard tipped in cyan.
+                w = 2 if a <= 10 else 1 if a <= 12 else 0
+                if -4 <= a <= tip and abs(p) <= w:
+                    if abs(p) == w and w:
+                        col = ramp(gold, 0.95 if p < 0 else 0.6)
+                    else:
+                        col = alloy_colour(0.62 + 0.25 * (-p), (a + 4) / 17, gold_below=0.0)
+                if a in (-6, -5) and abs(p) <= 5:
+                    col = (ramp(RUBY, 0.95 if p < 0 else 0.6) if abs(p) <= 1 else ramp(accent, 0.85) if abs(p) == 5
+                           else ramp(gold, 0.9 if p < 0 else 0.6))
+            if col:
+                cells[(x, y)] = col
+
+    if tier == "void":
+        for x, y in ((5, 3), (3, 6), (8, 1), (12, 10), (10, 13), (14, 6)):
+            loose[(x, y)] = ramp(accent, 0.85)
+    if tier == "shard":
+        for x, y in ((4, 4), (11, 12)):
+            loose[(x, y)] = ramp(accent, 0.95)
+
+    outline = ramp(metal, 0.0) if tier != "ultimate" else ramp(gold, 0.05)
+    rows = [[(0, 0, 0, 0)] * 16 for _ in range(16)]
+    for y in range(16):
+        for x in range(16):
+            if (x, y) in cells:
+                rows[y][x] = (*cells[(x, y)], 255)
+            elif any((x + dx, y + dy) in cells for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1))):
+                rows[y][x] = (*outline, 255)
+    for (x, y), col in loose.items():
+        if not rows[y][x][3]:
+            rows[y][x] = (*col, 255)
+    return rows
 
 
 def write_textures(jar: Path) -> None:
@@ -282,33 +419,42 @@ def write_textures(jar: Path) -> None:
 
         tools = {kind: vanilla(f"item/diamond_{kind}") for kind in TOOLS}
         tools["spear_in_hand"] = vanilla("item/diamond_spear_in_hand")
-        icons = {shape: {kind: vanilla(f"item/{shape}_{kind}") for kind in ARMOUR} for shape in ("diamond", "netherite")}
-        worn = {shape: {layer: vanilla(f"entity/equipment/{layer}/{shape}") for layer in WORN_LAYERS
-                        if VANILLA + f"entity/equipment/{layer}/{shape}.png" in names} for shape in ("diamond", "netherite")}
+        icons = {kind: vanilla(f"item/diamond_{kind}") for kind in ARMOUR}
+        worn = {layer: vanilla(f"entity/equipment/{layer}/diamond") for layer in WORN_LAYERS
+                if VANILLA + f"entity/equipment/{layer}/diamond.png" in names}
         materials = {name: vanilla(f"item/{shape}") for name, (shape, _span) in MATERIAL_SHAPES.items()}
 
     # The diamond tools and armour icons share one palette in vanilla, so they share one mapping here.
-    diamond_shades = spread(list(tools.values()) + list(icons["diamond"].values()), part_of_tool)
-    icon_shades = {"diamond": diamond_shades, "netherite": spread(icons["netherite"].values(), all_metal)}
-    icon_part = {"diamond": part_of_tool, "netherite": all_metal}
-    worn_shades = {shape: spread(layers.values(), all_metal) for shape, layers in worn.items()}
+    diamond_shades = spread(list(tools.values()) + list(icons.values()), part_of_tool)
+    worn_shades = spread(worn.values(), all_metal)
 
     items = ASSETS / "textures" / "item"
     for tier, colours in TIERS.items():
+        ultimate = tier == "ultimate"
+        # The ultimate gear is the alloy's colours: the four bosses' running across it, edged in gold.
+        def across(rows, gold_below=0.42):
+            if not ultimate:
+                return None
+            xs = [x for row in rows for x, colour in enumerate(row) if colour[3]]
+            left, right = min(xs), max(xs)
+            return lambda t, x, y, w, h: alloy_colour(t, (x - left) / max(1, right - left), gold_below)
+
+        diagonal = (lambda t, x, y, w, h: alloy_colour(t, (x + h - 1 - y) / (w + h - 2))) if ultimate else None
         for kind in TOOLS:
-            write_png(items / f"{tier}_{kind}.png", recolour(tools[kind], colours, part_of_tool, diamond_shades))
-        write_png(items / f"{tier}_spear_in_hand.png", recolour(tools["spear_in_hand"], colours, part_of_tool, diamond_shades))
-        shape = colours["armour"]
+            rows = sword(tier) if kind == "sword" else recolour(tools[kind], colours, part_of_tool, diamond_shades, metal=diagonal)
+            write_png(items / f"{tier}_{kind}.png", rows)
+        write_png(items / f"{tier}_spear_in_hand.png",
+                  recolour(tools["spear_in_hand"], colours, part_of_tool, diamond_shades, metal=diagonal))
         for kind in ARMOUR:
-            write_png(items / f"{tier}_{kind}.png",
-                      recolour(icons[shape][kind], colours, icon_part[shape], icon_shades[shape], ICON_SPAN[shape]))
-        for layer, rows in worn[shape].items():
+            write_png(items / f"{tier}_{kind}.png", recolour(icons[kind], colours, part_of_tool, diamond_shades,
+                                                             ICON_SPAN, metal=across(icons[kind]), pattern=tier_pattern(tier, 16)))
+        for layer, rows in worn.items():
             write_png(ASSETS / "textures" / "entity" / "equipment" / layer / f"{tier}.png",
-                      recolour(rows, colours, all_metal, worn_shades[shape], WORN_SPAN[shape]))
+                      recolour(rows, colours, all_metal, worn_shades, WORN_SPAN, metal=across(rows, 0.33), pattern=tier_pattern(tier, 64)))
         material = colours["material"]
         rows, span = materials[material], MATERIAL_SHAPES[material][1]
         shades = spread([rows], all_metal)
-        write_png(items / f"{material}.png", alloy(rows, shades, span) if tier == "ultimate" else recolour(rows, colours, all_metal, shades, span))
+        write_png(items / f"{material}.png", alloy(rows, shades, span) if ultimate else recolour(rows, colours, all_metal, shades, span))
 
 
 def main() -> None:
