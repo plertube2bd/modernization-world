@@ -5,6 +5,7 @@
   "name": "Modernization World",
   "description": "Analog redstone computing, electric circuits, oil and petrochemistry, firearms, diesel cars built from blocks, self-driving rail transport, 220 V factories, moving structures, a redcoat raid and the BOSS Mode bosses in one mod.",
   "license": "All Rights Reserved",
+  "icon": "assets/modernization_world/icon.png",
   "contact": {
     "sources": "https://github.com/plertube2bd/analogAlu"
   },
