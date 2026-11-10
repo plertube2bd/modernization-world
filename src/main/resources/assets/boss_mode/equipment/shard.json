@@ -9,6 +9,11 @@
       {
         "texture": "boss_mode:shard"
       }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "boss_mode:shard"
+      }
     ]
   }
 }

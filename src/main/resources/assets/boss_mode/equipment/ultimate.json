@@ -9,6 +9,11 @@
       {
         "texture": "boss_mode:ultimate"
       }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "boss_mode:ultimate"
+      }
     ]
   }
 }

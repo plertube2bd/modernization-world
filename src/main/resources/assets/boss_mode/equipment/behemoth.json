@@ -9,6 +9,11 @@
       {
         "texture": "boss_mode:behemoth"
       }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "boss_mode:behemoth"
+      }
     ]
   }
 }

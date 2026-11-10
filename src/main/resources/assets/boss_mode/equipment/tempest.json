@@ -9,6 +9,11 @@
       {
         "texture": "boss_mode:tempest"
       }
+    ],
+    "humanoid_baby": [
+      {
+        "texture": "boss_mode:tempest"
+      }
     ]
   }
 }

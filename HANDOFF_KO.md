@@ -4,7 +4,7 @@
 
 ## 현재 상태 (2026-11-08, 아래 본문보다 우선)
 
-- **보스 장비**를 넣었습니다(`src/main/java/com/bossmode/gear/`, 믹스인 `com/bossmode/mixin/BossGearDamageMixin`, 리소스 생성기 `tools/boss_mode/gen_boss_gear.py`). 네 보스가 재료를 떨어뜨리고, 재료로 도구·무기·갑옷 10종씩. 네 보스 재료를 하나씩 합치면 최종 합금, 그걸로 최종 장비. 수치는 CHANGELOG 11장.
+- **보스 장비**를 넣었습니다(`src/main/java/com/bossmode/gear/`, 믹스인 `com/bossmode/mixin/BossGearDamageMixin`, 리소스 생성기 `tools/boss_mode/gen_boss_gear.py`). 네 보스가 재료를 떨어뜨리고, 재료로 도구·무기·갑옷 10종씩. 네 보스 재료를 하나씩 합치면 최종 합금, 그걸로 최종 장비. 수치는 CHANGELOG 11장. 그림은 바닐라 다이아몬드·네더라이트 장비의 모양과 명암에 등급별 색을 입힌 것으로, 생성기가 Loom 캐시의 클라이언트 jar에서 바닐라 그림을 읽습니다(jar가 없으면 그림은 그대로 두고 JSON만 씁니다).
 - **보스 체력**: 페이즈마다 1,024였던 것을 1페이즈 100에서 마지막 페이즈 300(드래곤)/400(와이번)/500(거수)/600(지배자)까지 고르게 늘렸습니다(`entity/PhaseHealth.java`, 각 Config의 `FIRST_PHASE_HEALTH`·`LAST_PHASE_HEALTH`). 회복도 페이즈 체력에 비례합니다. CHANGELOG 12장.
 - 서버 게임 테스트 239개 통과(보스 장비 12개, 보스 체력 4개 포함). 클라이언트에서 다섯 세트를 입힌 모습(`RT_SHOTS=gear`)과 네더라이트 창·보스 창의 1인칭·3인칭 동작(`RT_SHOTS=spear`)을 찍었습니다.
 
