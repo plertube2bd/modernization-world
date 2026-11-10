@@ -1,6 +1,7 @@
 package com.bossmode.entity.warlord;
 
 import com.bossmode.config.BossConfig;
+import com.bossmode.entity.PhaseHealth;
 import com.bossmode.entity.DamageKind;
 import com.bossmode.entity.DecoratedBoss;
 import com.bossmode.entity.ShardFaction;
@@ -94,6 +95,17 @@ public class ShardWarlordEntity extends Monster implements ActionHost, ShardFact
 				.add(Attributes.FOLLOW_RANGE, 48.0)
 				.add(Attributes.STEP_HEIGHT, 1.0)
 				.add(Attributes.SCALE, BossConfig.WARLORD_SCALE);
+	}
+
+	/** The health of a warlord summoned by a boss whose current phase pool is {@code summonerPool}. */
+	public static double poolFor(double summonerPool) {
+		return Math.round(summonerPool * BossConfig.WARLORD_HEALTH_SHARE);
+	}
+
+	/** Sets max health to {@code health}, full. */
+	public void setPool(double health) {
+		PhaseHealth.apply(this, health, false);
+		setHealth(getMaxHealth());
 	}
 
 	public void setSummoner(Entity entity) {

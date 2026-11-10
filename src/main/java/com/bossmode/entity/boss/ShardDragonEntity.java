@@ -475,6 +475,7 @@ public class ShardDragonEntity extends Monster implements ActionHost, ShardFacti
 				warlord.snapTo(p.x, p.y, p.z, getYRot(), 0.0F);
 				warlord.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(p)), EntitySpawnReason.MOB_SUMMONED, null);
 				warlord.setSummoner(this);
+				warlord.setPool(ShardWarlordEntity.poolFor(phasePool(phase)));
 				if (target != null) {
 					warlord.setTarget(target);
 				}

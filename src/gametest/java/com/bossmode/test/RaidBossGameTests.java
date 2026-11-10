@@ -295,6 +295,10 @@ final class RaidBossGameTests {
 					check(b.getMaxHealth() == (float) b.phasePool(number), k.id() + " phase " + number + " pool is " + b.phasePool(number) + " (" + b.getMaxHealth() + ")");
 					check(b.getHealth() == b.getMaxHealth(), k.id() + " phase " + number + " pool refilled");
 					check(b.countWarlords(s.overworld()) == phase.midBosses(), k.id() + " phase " + number + " Shard Warlords: " + phase.midBosses());
+					float pool = (float) ShardWarlordEntity.poolFor(b.phasePool(number));
+					for (ShardWarlordEntity w : s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, b.getBoundingBox().inflate(128.0), w -> w.isSummonedBy(b))) {
+						check(w.getMaxHealth() == pool, k.id() + " phase " + number + " warlord has " + w.getMaxHealth() + " HP (" + pool + " expected)");
+					}
 				});
 				clearMinions(server);
 			}

@@ -11,7 +11,7 @@ Three raid bosses, a final boss, their minions and mid-boss, all built from the 
 | Entity | Model | Role |
 |---|---|---|
 | `boss_mode:shard_dragon` | BOSS.obj | boss - 10 phases, 100 -> 300 HP, grows ×2.0 → ×4.0 |
-| `boss_mode:shard_warlord` | Mob2.obj | mid-boss (phases 5, 7, 9, 10) |
+| `boss_mode:shard_warlord` | Mob2.obj | mid-boss (phases 5, 7, 9, 10) - 60 % of its summoner's current phase pool (180 if placed directly) |
 | `boss_mode:shard_hound` / `shard_spitter` / `volatile_hound` | Mob.obj | minions (melee / ranged / explosive) |
 | `boss_mode:tempest_wyvern` | BOSS2.obj | flying raid boss - 5 phases, 100 -> 400 HP, grows x1.6 -> x2.2, drops the **Tempest Eye** |
 | `boss_mode:bastion_behemoth` | BOSS3.obj | armoured raid boss - 8 phases, 100 -> 500 HP, grows x1.0 -> x1.35, drops the **Behemoth Core** |

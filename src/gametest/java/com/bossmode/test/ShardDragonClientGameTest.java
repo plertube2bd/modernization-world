@@ -809,7 +809,12 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 					check(Math.abs(v.getScale() - phase.scale()) < 0.01F, "Sovereign phase " + number + " size x" + phase.scale());
 					check(v.getMaxHealth() == (float) VoidSovereignEntity.phasePool(v.getPhase()), "Sovereign phase " + number + " pool is " + VoidSovereignEntity.phasePool(v.getPhase()) + " (" + v.getMaxHealth() + ")");
 					check(v.getHealth() == v.getMaxHealth(), "Sovereign phase " + number + " pool refilled");
-					int warlords = s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, v.getBoundingBox().inflate(128), w -> w.isSummonedBy(v)).size();
+					List<ShardWarlordEntity> summoned = s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, v.getBoundingBox().inflate(128), w -> w.isSummonedBy(v));
+					int warlords = summoned.size();
+					float pool = (float) ShardWarlordEntity.poolFor(VoidSovereignEntity.phasePool(v.getPhase()));
+					for (ShardWarlordEntity w : summoned) {
+						check(w.getMaxHealth() == pool, "Sovereign phase " + number + " warlord has " + w.getMaxHealth() + " HP (" + pool + " expected)");
+					}
 					check(warlords == phase.midBosses(), "Sovereign phase " + number + " mid-bosses: " + warlords);
 				});
 				if (phase.pylons() > 0) {
@@ -1062,8 +1067,13 @@ public class ShardDragonClientGameTest implements FabricClientGameTest {
 		}
 		check(phase.minions().containsAll(seen), "phase " + phase.number() + " minions " + seen + " within roster " + phase.minions());
 		check(hounds.size() + wraiths.size() == phase.entryWave(), "phase " + phase.number() + " entry wave of " + phase.entryWave());
-		int warlords = s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, area, w -> w.isSummonedBy(d)).size();
+		List<ShardWarlordEntity> summoned = s.overworld().getEntitiesOfClass(ShardWarlordEntity.class, area, w -> w.isSummonedBy(d));
+		int warlords = summoned.size();
 		check(warlords == Math.min(phase.midBosses(), BossConfig.MAX_ACTIVE_WARLORDS), "phase " + phase.number() + " mid-bosses: " + warlords);
+		float pool = (float) ShardWarlordEntity.poolFor(ShardDragonEntity.phasePool(phase));
+		for (ShardWarlordEntity w : summoned) {
+			check(w.getMaxHealth() == pool, "phase " + phase.number() + " warlord has " + w.getMaxHealth() + " HP (" + pool + " expected)");
+		}
 	}
 
 	/** Every sealed damage type bounces off, every open one still hurts. */

@@ -159,7 +159,13 @@ public final class BossConfig {
 	public static final int HOUND_EMERGE_TICKS = 20;
 
 	// =================================================================== Shard Warlord (mid-boss)
-	public static final double WARLORD_HEALTH = 600.0, WARLORD_DAMAGE = 16.0, WARLORD_SPEED = 0.30;
+	/**
+	 * A summoned warlord's health is this share of its summoner's current phase pool (as it was with the old 600 of 1,024):
+	 * 113-180 with the dragon, 195-240 with the wyvern, 232-300 with the behemoth, 160-360 with the Sovereign.
+	 * WARLORD_HEALTH is for one placed directly (spawn egg, command): the dragon's last-phase warlord.
+	 */
+	public static final double WARLORD_HEALTH_SHARE = 0.6;
+	public static final double WARLORD_HEALTH = 180.0, WARLORD_DAMAGE = 16.0, WARLORD_SPEED = 0.30;
 	public static final double WARLORD_ARMOR = 14.0, WARLORD_TOUGHNESS = 8.0, WARLORD_SCALE = 1.5;
 	public static final int WARLORD_INTRO_TICKS = 30, WARLORD_DEATH_TICKS = 40;
 	public static final double WARLORD_SWING_RANGE = 2.4, WARLORD_SWING_CONE = 140.0;

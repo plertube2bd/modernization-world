@@ -6,6 +6,7 @@ import com.bossmode.entity.boss.ShardDragonEntity;
 import com.bossmode.entity.raid.RaidBossEntity;
 import com.bossmode.entity.sovereign.SovereignPhase;
 import com.bossmode.entity.sovereign.VoidSovereignEntity;
+import com.bossmode.entity.warlord.ShardWarlordEntity;
 import com.bossmode.registry.ModEntities;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
 import net.minecraft.core.BlockPos;
@@ -23,7 +24,10 @@ import net.minecraft.world.level.storage.TagValueOutput;
 
 import java.util.function.IntToDoubleFunction;
 
-/** Each boss phase is its own pool: 100 HP in phase 1, rising evenly to 300 / 400 / 500 / 600 in each boss's last phase. */
+/**
+ * Each boss phase is its own pool: 100 HP in phase 1, rising evenly to 300 / 400 / 500 / 600 in each boss's last phase.
+ * A summoned Shard Warlord has 60 % of its summoner's current pool.
+ */
 public final class BossPhaseHealthGameTests {
     private static final String ARENA = "redstone_transportation_test:arena";
 
@@ -74,6 +78,33 @@ public final class BossPhaseHealthGameTests {
             helper.assertTrue(loaded.getMaxHealth() == lastPool[i], types[i] + " came back with a pool of " + loaded.getMaxHealth());
             helper.assertTrue(Math.abs(loaded.getHealth() - lastPool[i] / 2.0F) < 0.01F, types[i] + " came back with " + loaded.getHealth());
         }
+        helper.succeed();
+    }
+
+    /** A summoned warlord has 60 % of its summoner's current phase pool; one placed directly has 180. */
+    @GameTest(structure = ARENA, maxTicks = 20)
+    public void warlordsHaveAShareOfTheirSummonersPool(GameTestHelper helper) {
+        double[][] expected = {
+                {ShardDragonEntity.phasePool(BossPhase.byNumber(5)), 113}, {ShardDragonEntity.phasePool(BossPhase.byNumber(10)), 180},
+                {VoidSovereignEntity.phasePool(SovereignPhase.byNumber(4)), 160}, {VoidSovereignEntity.phasePool(SovereignPhase.byNumber(10)), 360},
+        };
+        for (double[] row : expected) {
+            helper.assertTrue(ShardWarlordEntity.poolFor(row[0]) == row[1], "warlord for a pool of " + row[0] + ": " + ShardWarlordEntity.poolFor(row[0]));
+        }
+        RaidBossEntity<?> wyvern = (RaidBossEntity<?>) make(helper, ModEntities.TEMPEST_WYVERN);
+        RaidBossEntity<?> behemoth = (RaidBossEntity<?>) make(helper, ModEntities.BASTION_BEHEMOTH);
+        helper.assertTrue(ShardWarlordEntity.poolFor(wyvern.phasePool(4)) == 195, "warlord with the wyvern's phase 4");
+        helper.assertTrue(ShardWarlordEntity.poolFor(behemoth.phasePool(8)) == 300, "warlord with the behemoth's phase 8");
+
+        ShardWarlordEntity warlord = (ShardWarlordEntity) make(helper, ModEntities.SHARD_WARLORD);
+        helper.assertTrue(warlord.getMaxHealth() == 180.0F && warlord.getHealth() == 180.0F,
+                "a warlord placed directly has " + warlord.getHealth() + "/" + warlord.getMaxHealth());
+        warlord.setPool(113.0D);
+        helper.assertTrue(warlord.getMaxHealth() == 113.0F && warlord.getHealth() == 113.0F,
+                "a summoned warlord has " + warlord.getHealth() + "/" + warlord.getMaxHealth());
+        warlord.setPool(360.0D);
+        helper.assertTrue(warlord.getMaxHealth() == 360.0F && warlord.getHealth() == 360.0F,
+                "a stronger summoned warlord has " + warlord.getHealth() + "/" + warlord.getMaxHealth());
         helper.succeed();
     }
 
