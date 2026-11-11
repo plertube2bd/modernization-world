@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "id": "jail",
+  "version": "${version}",
+  "name": "Jail",
+  "description": "A jail dimension for servers. Operators send a player to jail with /감옥 <player> <minutes>; the player's items, level and place are kept and given back on release. Five minigames in the jail take time off the sentence. Server-side only: players do not need it.",
+  "license": "All Rights Reserved",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.example.jail.JailMod"]
+  },
+  "mixins": ["jail.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": ">=26.3 <26.4",
+    "java": ">=25",
+    "fabric-api": "*"
+  }
+}

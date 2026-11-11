@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "jail_test",
+  "version": "1.0.0",
+  "name": "Jail Tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["com.example.jail.test.JailGameTests"],
+    "fabric-client-gametest": ["com.example.jail.test.JailClientGameTest"]
+  },
+  "depends": { "jail": "*" }
+}

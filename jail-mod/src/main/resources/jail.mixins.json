@@ -1,0 +1,11 @@
+{
+  "required": true,
+  "package": "com.example.jail.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "mixins": [
+    "TargetBlockMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}
