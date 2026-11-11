@@ -31,10 +31,49 @@ public final class JailClientGameTest implements FabricClientGameTest {
             }
             shot(context, world, name, "jail_yard", "0.5 64 6 facing 0.5 65 -9");
 
-            world.getServer().runOnServer(server -> RoomMenu.open(player(server, name), MiniGames.Game.PARKOUR));
+            // A real right-click on the fishing NPC opens its room picker.
+            shot(context, world, name, "jail_npc_close", "5.5 64 -7 facing 5.5 65.6 -9.5");
+            net.minecraft.world.phys.Vec3 npcAt = world.getServer().computeOnServer(server -> {
+                var level = Jail.level(server);
+                var found = level.getEntitiesOfClass(net.minecraft.world.entity.decoration.Mannequin.class,
+                        new net.minecraft.world.phys.AABB(-16, 60, -16, 16, 72, 16), m -> "fish".equals(com.example.jail.JailBuilder.npcKey(m)));
+                return found.get(0).position().add(0, 1.2, 0);
+            });
+            context.runOnClient(client -> client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, npcAt));
+            context.waitTicks(5);
+            context.getInput().pressKey(options -> options.keyUse);
             context.waitTicks(10);
+            boolean menu = world.getServer().computeOnServer(server -> player(server, name).containerMenu instanceof RoomMenu);
+            if (!menu) {
+                throw new AssertionError("right-clicking the fishing NPC opened no room picker");
+            }
             context.takeScreenshot(TestScreenshotOptions.of("jail_room_menu"));
-            world.getServer().runOnServer(server -> player(server, name).closeContainer());
+            world.getServer().runOnServer(server -> player(server, name).containerMenu.clicked(RoomMenu.SLOTS[0], 0,
+                    net.minecraft.world.inventory.ContainerInput.PICKUP, player(server, name)));
+            context.waitTicks(40);
+            boolean inRoom = world.getServer().computeOnServer(server -> Rooms.room(MiniGames.Game.FISH, 0).equals(Rooms.of(player(server, name))));
+            if (!inRoom) {
+                throw new AssertionError("clicking room 1 did not go to fishing room 1");
+            }
+            // A real right-click on the room's NPC goes back to the yard.
+            Rooms.Room fish = Rooms.room(MiniGames.Game.FISH, 0);
+            int fx = fish.origin().getX(), fz = fish.origin().getZ();
+            world.getServer().runCommand("execute in jail:jail run tp " + name + " " + (fx - 27.5) + " 64 " + (fz - 1.5));
+            context.waitTicks(40);
+            net.minecraft.world.phys.Vec3 exitAt = world.getServer().computeOnServer(server -> Jail.level(server)
+                    .getEntitiesOfClass(net.minecraft.world.entity.decoration.Mannequin.class,
+                            new net.minecraft.world.phys.AABB(fx - 32, 60, fz - 10, fx - 20, 72, fz + 10), m -> "exit".equals(com.example.jail.JailBuilder.npcKey(m)))
+                    .get(0).position().add(0, 1.2, 0));
+            context.runOnClient(client -> client.player.lookAt(net.minecraft.commands.arguments.EntityAnchorArgument.Anchor.EYES, exitAt));
+            context.waitTicks(5);
+            world.getConnection().waitForChunksRender();
+            context.takeScreenshot(TestScreenshotOptions.of("jail_exit_npc"));
+            context.getInput().pressKey(options -> options.keyUse);
+            context.waitTicks(10);
+            boolean yard = world.getServer().computeOnServer(server -> com.example.jail.JailBuilder.inHub(player(server, name).position()));
+            if (!yard) {
+                throw new AssertionError("right-clicking the room's NPC did not go back to the yard");
+            }
 
             for (MiniGames.Game game : MiniGames.Game.values()) {
                 world.getServer().runOnServer(server -> Rooms.enter(player(server, name), Rooms.room(game, 0)));

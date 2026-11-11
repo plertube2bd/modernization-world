@@ -5,7 +5,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityTypes;
+import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import net.minecraft.nbt.TagParser;
+import net.minecraft.util.ProblemReporter;
+import net.minecraft.world.entity.EquipmentSlot;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.storage.TagValueInput;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -73,7 +81,10 @@ public final class JailBuilder {
         if (!level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.pack(at))) {
             return;
         }
-        List<Villager> found = level.getEntitiesOfClass(Villager.class, new AABB(at).inflate(1.5), v -> key.equals(npcKey(v)));
+        AABB around = new AABB(at).inflate(1.5);
+        // The first NPCs were villagers: they go.
+        level.getEntitiesOfClass(Villager.class, around, v -> npcKey(v) != null).forEach(v -> v.discard());
+        List<Mannequin> found = level.getEntitiesOfClass(Mannequin.class, around, m -> key.equals(npcKey(m)));
         if (found.isEmpty()) {
             npc(level, at, name, key, looking);
         }
@@ -125,31 +136,44 @@ public final class JailBuilder {
         return window ? Blocks.IRON_BARS : y == 70 ? Blocks.CHISELED_STONE_BRICKS : y % 9 == 0 ? Blocks.GLOWSTONE : Blocks.STONE_BRICKS;
     }
 
-    /** A villager that stands still, cannot be hurt, and shows its name; replaces any NPC already standing there. */
-    public static void npc(ServerLevel level, BlockPos at, String name, String key) {
-        npc(level, at, name, key, SPAWN);
-    }
-
-    /** As above, looking towards a point. */
+    /**
+     * An NPC: a fellow prisoner (a vanilla mannequin, shaped like a player) in the orange uniform, holding the game's
+     * tool, standing still where nothing can hurt or move it, its name shown above it. Replaces any NPC already there.
+     */
     public static void npc(ServerLevel level, BlockPos at, String name, String key, Vec3 looking) {
         AABB around = new AABB(at).inflate(1.5);
-        level.getEntitiesOfClass(Villager.class, around, v -> v.entityTags().contains(NPC_TAG)).forEach(v -> v.discard());
-        Villager villager = EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
-        if (villager == null) {
+        level.getEntitiesOfClass(Mannequin.class, around, m -> npcKey(m) != null).forEach(m -> m.discard());
+        Mannequin npc = EntityTypes.MANNEQUIN.create(level, EntitySpawnReason.COMMAND);
+        if (npc == null) {
             return;
+        }
+        try {
+            npc.load(TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(),
+                    TagParser.parseCompoundFully("{immovable:1b,hide_description:1b,Invulnerable:1b,Silent:1b,PersistenceRequired:1b}")));
+        } catch (CommandSyntaxException impossible) {
+            throw new IllegalStateException(impossible);
         }
         Vec3 pos = Vec3.atBottomCenterOf(at);
         double yaw = Math.toDegrees(Math.atan2(-(looking.x - pos.x), looking.z - pos.z));
-        villager.snapTo(pos.x, pos.y, pos.z, (float) yaw, 0.0F);
-        villager.setYHeadRot((float) yaw);
-        villager.setNoAi(true);
-        villager.setSilent(true);
-        villager.setPersistenceRequired();
-        villager.setCustomName(Component.literal(name));
-        villager.setCustomNameVisible(true);
-        villager.addTag(NPC_TAG);
-        villager.addTag(NPC_TAG + ":" + key);
-        level.addFreshEntity(villager);
+        npc.snapTo(pos.x, pos.y, pos.z, (float) yaw, 0.0F);
+        npc.setYHeadRot((float) yaw);
+        npc.setYBodyRot((float) yaw);
+        npc.setCustomName(Component.literal(name));
+        npc.setCustomNameVisible(true);
+        npc.setItemSlot(EquipmentSlot.CHEST, Jail.uniformPiece(level, Items.LEATHER_CHESTPLATE, "죄수복 상의"));
+        npc.setItemSlot(EquipmentSlot.LEGS, Jail.uniformPiece(level, Items.LEATHER_LEGGINGS, "죄수복 바지"));
+        npc.setItemSlot(EquipmentSlot.FEET, Jail.uniformPiece(level, Items.LEATHER_BOOTS, "죄수 신발"));
+        npc.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(switch (key) {
+            case "coal" -> Items.WOODEN_PICKAXE;
+            case "target" -> Items.BOW;
+            case "fish" -> Items.FISHING_ROD;
+            case "quiz" -> Items.BOOK;
+            case "parkour" -> Items.FEATHER;
+            default -> Items.AIR;
+        }));
+        npc.addTag(NPC_TAG);
+        npc.addTag(NPC_TAG + ":" + key);
+        level.addFreshEntity(npc);
     }
 
     /** The key of an NPC ("coal", "exit"...), or null if the entity is not a jail NPC. */

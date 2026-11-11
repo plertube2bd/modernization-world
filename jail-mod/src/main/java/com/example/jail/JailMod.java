@@ -83,8 +83,8 @@ public final class JailMod implements ModInitializer {
             if (key == null) {
                 return InteractionResult.PASS;
             }
-            // Each right-click comes as two packets (with and without a hit point) and for each hand: act on one.
-            if (hand == InteractionHand.MAIN_HAND && hit == null && player instanceof ServerPlayer prisoner) {
+            // A right-click can come for each hand, and twice from some games: act once, for the main hand.
+            if (hand == InteractionHand.MAIN_HAND && player instanceof ServerPlayer prisoner && MiniGames.firstClick(prisoner)) {
                 if (!Jail.isJailed(prisoner)) {
                     prisoner.sendSystemMessage(Component.literal("감옥에 있는 사람만 쓸 수 있습니다."));
                 } else if (key.equals("exit")) {

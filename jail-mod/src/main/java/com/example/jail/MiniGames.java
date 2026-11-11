@@ -91,6 +91,14 @@ public final class MiniGames {
     private static final Map<UUID, Integer> ANSWERS = new HashMap<>();
     private static final Map<UUID, String> QUESTIONS = new HashMap<>();
     private static final Map<UUID, Map<Game, Long>> READY_AT = new HashMap<>();
+    private static final Map<UUID, Long> LAST_CLICK = new HashMap<>();
+
+    /** True for a player's first NPC click in a short while, so one right-click does one thing. */
+    public static boolean firstClick(ServerPlayer player) {
+        long now = player.level().getServer().getTickCount();
+        Long last = LAST_CLICK.put(player.getUUID(), now);
+        return last == null || now - last > 4;
+    }
 
     private MiniGames() {
     }

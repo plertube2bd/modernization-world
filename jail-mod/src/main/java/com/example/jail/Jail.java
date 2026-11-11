@@ -240,17 +240,25 @@ public final class Jail {
     }
 
     private static void uniform(ServerPlayer player, EquipmentSlot slot, net.minecraft.world.item.Item item, String name) {
-        if (player.getItemBySlot(slot).is(item)) {
-            return;
+        if (!player.getItemBySlot(slot).is(item)) {
+            player.setItemSlot(slot, uniformPiece(player.level(), item, name));
         }
+    }
+
+    /** A piece of the uniform: orange leather, never wears out, cursed with binding. */
+    public static ItemStack uniformPiece(Level level, net.minecraft.world.item.Item item, String name) {
         ItemStack piece = tool(new ItemStack(item), name);
         piece.set(DataComponents.DYED_COLOR, new DyedItemColor(UNIFORM));
-        piece.enchant(enchantment(player, Enchantments.BINDING_CURSE), 1);
-        player.setItemSlot(slot, piece);
+        piece.enchant(enchantment(level, Enchantments.BINDING_CURSE), 1);
+        return piece;
     }
 
     private static Holder<Enchantment> enchantment(ServerPlayer player, ResourceKey<Enchantment> key) {
-        return player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
+        return enchantment(player.level(), key);
+    }
+
+    private static Holder<Enchantment> enchantment(Level level, ResourceKey<Enchantment> key) {
+        return level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
     }
 
     /** Whether a player has all the jail's things (given again after a death in jail). */

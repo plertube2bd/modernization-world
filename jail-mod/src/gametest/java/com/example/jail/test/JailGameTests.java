@@ -11,7 +11,7 @@ import net.fabricmc.fabric.api.event.player.UseEntityCallback;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EquipmentSlot;
-import net.minecraft.world.entity.npc.villager.Villager;
+import net.minecraft.world.entity.decoration.Mannequin;
 import net.minecraft.world.inventory.ContainerInput;
 import net.minecraft.world.phys.AABB;
 import net.fabricmc.fabric.api.gametest.v1.GameTest;
@@ -257,21 +257,26 @@ public final class JailGameTests {
         Jail.jail(player, 5);
         ServerLevel jail = (ServerLevel) player.level();
         helper.succeedWhen(() -> {
-            var npcs = jail.getEntitiesOfClass(Villager.class, new AABB(-16, 60, -16, 16, 72, 16), v -> JailBuilder.npcKey(v) != null);
+            var npcs = jail.getEntitiesOfClass(Mannequin.class, new AABB(-16, 60, -16, 16, 72, 16), v -> JailBuilder.npcKey(v) != null);
             helper.assertValueEqual(npcs.size(), MiniGames.Game.values().length, "NPCs in the yard");
-            helper.assertTrue(npcs.stream().allMatch(Villager::isNoAi), "an NPC walks about");
+            helper.assertTrue(npcs.stream().allMatch(n -> n.getItemBySlot(EquipmentSlot.CHEST).is(Items.LEATHER_CHESTPLATE)), "an NPC without the uniform");
             if (Rooms.of(player) == null) {
-                RoomMenu.open(player, MiniGames.Game.FISH);
+                // A right-click as the game sends it: with the point it hit, for the main hand (and maybe the off hand too).
+                Mannequin fishing = npcs.stream().filter(n -> "fish".equals(JailBuilder.npcKey(n))).findFirst().orElseThrow();
+                var at = new net.minecraft.world.phys.EntityHitResult(fishing, fishing.position().add(0, 1, 0));
+                UseEntityCallback.EVENT.invoker().interact(player, jail, InteractionHand.MAIN_HAND, fishing, at);
+                UseEntityCallback.EVENT.invoker().interact(player, jail, InteractionHand.OFF_HAND, fishing, at);
                 helper.assertTrue(player.containerMenu instanceof RoomMenu, "no room picker: " + player.containerMenu);
                 helper.assertTrue(player.containerMenu.getSlot(RoomMenu.SLOTS[1]).getItem().is(Items.COD), "no icon for fishing room 2");
                 player.containerMenu.clicked(RoomMenu.SLOTS[1], 0, ContainerInput.PICKUP, player);
                 helper.assertTrue(player.containerMenu == player.inventoryMenu, "the room picker stayed open");
             }
             helper.assertTrue(Rooms.room(MiniGames.Game.FISH, 1).equals(Rooms.of(player)), "the click did not go to fishing room 2: " + player.position());
-            var exit = jail.getEntitiesOfClass(Villager.class, new AABB(BlockPos.containing(Rooms.room(MiniGames.Game.FISH, 1).spawn())).inflate(6),
+            var exit = jail.getEntitiesOfClass(Mannequin.class, new AABB(BlockPos.containing(Rooms.room(MiniGames.Game.FISH, 1).spawn())).inflate(6),
                     v -> "exit".equals(JailBuilder.npcKey(v)));
             helper.assertValueEqual(exit.size(), 1, "exit NPCs in the room");
-            UseEntityCallback.EVENT.invoker().interact(player, jail, InteractionHand.MAIN_HAND, exit.get(0), null);
+            UseEntityCallback.EVENT.invoker().interact(player, jail, InteractionHand.MAIN_HAND, exit.get(0),
+                    new net.minecraft.world.phys.EntityHitResult(exit.get(0), exit.get(0).position().add(0, 1, 0)));
             helper.assertTrue(JailBuilder.inHub(player.position()), "the exit NPC did not lead to the yard: " + player.position());
             Jail.release(player);
         });
