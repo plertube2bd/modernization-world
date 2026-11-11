@@ -31,7 +31,7 @@ import java.util.UUID;
 public final class MiniGames {
     // Time off, in ticks (20 a second).
     public static final int COAL = 10 * 20;
-    public static final int PARKOUR = 60 * 20;
+    public static final int PARKOUR = 30 * 20;
     public static final int TARGET = 15 * 20;
     public static final int BULLSEYE = 30 * 20;
     public static final int FISH = 20 * 20;
@@ -39,20 +39,51 @@ public final class MiniGames {
     /** Mined coal grows back after this long. */
     public static final int COAL_REGROW = 45 * 20;
 
-    /** Each minigame's name, and how long after it counts before it counts again. */
-    public enum Game {
-        COAL("석탄 캐기", 3 * 20),
-        PARKOUR("파쿠르", 3 * 60 * 20),
-        TARGET("과녁 맞히기", 5 * 20),
-        FISH("낚시", 20 * 20),
-        QUIZ("퀴즈", 30 * 20);
+    /** Players in the same room get this share of the time another takes off. */
+    public static final int SHARE_DIVISOR = 10;
 
+    /** Each minigame's key, name, and how long after it counts before it counts again. */
+    public enum Game {
+        COAL("coal", "석탄 캐기", 3 * 20),
+        PARKOUR("parkour", "파쿠르", 3 * 60 * 20),
+        TARGET("target", "과녁 맞히기", 5 * 20),
+        FISH("fish", "낚시", 20 * 20),
+        QUIZ("quiz", "퀴즈", 30 * 20);
+
+        public final String key;
         public final String label;
         public final int cooldown;
 
-        Game(String label, int cooldown) {
+        Game(String key, String label, int cooldown) {
+            this.key = key;
             this.label = label;
             this.cooldown = cooldown;
+        }
+
+        public static Game byKey(String key) {
+            for (Game game : values()) {
+                if (game.key.equals(key)) {
+                    return game;
+                }
+            }
+            return null;
+        }
+    }
+
+    /**
+     * Time off for a prisoner, and a tenth of it for everyone else in the same room: playing together, the one who
+     * did it gets it all and the others a share.
+     */
+    public static void reward(ServerPlayer player, int ticks, String why) {
+        Jail.reduce(player, ticks, why);
+        Rooms.Room room = Rooms.of(player);
+        if (room == null) {
+            return;
+        }
+        for (ServerPlayer other : Rooms.playersIn(player.level().getServer(), room)) {
+            if (other != player) {
+                Jail.reduce(other, ticks / SHARE_DIVISOR, player.getGameProfile().name() + "님의 " + why + " (1/" + SHARE_DIVISOR + ")");
+            }
         }
     }
 
@@ -102,7 +133,7 @@ public final class MiniGames {
     }
 
     public static void coalMined(ServerPlayer player, BlockPos pos) {
-        Jail.reduce(player, COAL, "석탄 캐기");
+        reward(player, COAL, "석탄 캐기");
         startCooldown(player, Game.COAL);
         REGROW.put(pos.immutable(), player.level().getServer().getTickCount() + (long) COAL_REGROW);
     }
@@ -131,18 +162,22 @@ public final class MiniGames {
         if (!Jail.isJail(player.level())) {
             return;
         }
-        if (player.blockPosition().below().equals(JailBuilder.PARKOUR_FINISH)) {
+        Rooms.Room room = Rooms.of(player);
+        if (room != null && room.game() == Game.PARKOUR && player.blockPosition().below().equals(room.parkourFinish())) {
             if (!coolingDown(player, Game.PARKOUR)) {
-                Jail.reduce(player, PARKOUR, "파쿠르 완주");
+                reward(player, PARKOUR, "파쿠르 완주");
                 startCooldown(player, Game.PARKOUR);
             }
-            Jail.teleport(player, (ServerLevel) player.level(), JailBuilder.PARKOUR_START, 180.0F, 0.0F);
+            Jail.teleport(player, (ServerLevel) player.level(), room.parkourStart(), -90.0F, 0.0F);
         }
         if (now % 10 == 0) {
             checkFish(player);
         }
-        if (now % 100 == 0 && !Jail.hasKit(player)) {
-            Jail.giveKit(player);
+        if (now % 100 == 0) {
+            Jail.ensureKit(player);
+        }
+        if (room != null && now % 40 == 0) {
+            Rooms.ensureExitNpc((ServerLevel) player.level(), room);
         }
     }
 
@@ -158,7 +193,7 @@ public final class MiniGames {
             }
         }
         if (fish > 0 && !coolingDown(player, Game.FISH)) {
-            Jail.reduce(player, FISH * fish, "물고기 " + fish + "마리");
+            reward(player, FISH * fish, "물고기 " + fish + "마리");
             startCooldown(player, Game.FISH);
         }
     }
@@ -170,13 +205,17 @@ public final class MiniGames {
         if (!Jail.isJail(level) || !(projectile.getOwner() instanceof ServerPlayer player) || !Jail.isJailed(player)) {
             return;
         }
-        if (player.getX() < JailBuilder.SHOOTING_LINE_X + 0.5) {
+        Rooms.Room room = Rooms.of(player);
+        if (room == null || room.game() != Game.TARGET) {
+            return;
+        }
+        if (player.getX() < room.shootingLineX()) {
             if (coolingDown(player, Game.TARGET)) {
                 return;
             }
             startCooldown(player, Game.TARGET);
             boolean centre = offCentre(hit) < 1.0 / 6.0;
-            Jail.reduce(player, centre ? BULLSEYE : TARGET, centre ? "과녁 정중앙" : "과녁 명중");
+            reward(player, centre ? BULLSEYE : TARGET, centre ? "과녁 정중앙" : "과녁 명중");
         } else {
             player.sendOverlayMessage(Component.literal("빨간 선 뒤에서 쏴야 합니다!").withStyle(ChatFormatting.RED));
         }
@@ -216,6 +255,10 @@ public final class MiniGames {
         player.sendSystemMessage(Component.literal("퀴즈: " + question + "  (채팅창에 숫자로 답하세요)").withStyle(ChatFormatting.LIGHT_PURPLE));
     }
 
+    public static boolean hasQuestion(ServerPlayer player) {
+        return QUESTIONS.containsKey(player.getUUID());
+    }
+
     public static void setQuestion(ServerPlayer player, String question, int answer) {
         QUESTIONS.put(player.getUUID(), question);
         ANSWERS.put(player.getUUID(), answer);
@@ -237,7 +280,7 @@ public final class MiniGames {
         QUESTIONS.remove(player.getUUID());
         startCooldown(player, Game.QUIZ);
         if (given == expected) {
-            Jail.reduce(player, QUIZ, "퀴즈 정답");
+            reward(player, QUIZ, "퀴즈 정답");
         } else {
             player.sendSystemMessage(Component.literal("틀렸습니다. 정답은 " + expected + "였습니다. 30초 뒤에 독서대를 다시 눌러 새 문제를 받으세요.")
                     .withStyle(ChatFormatting.RED));

@@ -1,59 +1,51 @@
 package com.example.jail;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.EntityTypes;
+import net.minecraft.world.entity.npc.villager.Villager;
 import net.minecraft.world.item.DyeColor;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.LecternBlock;
 import net.minecraft.world.level.block.StandingSignBlock;
 import net.minecraft.world.level.block.entity.SignBlockEntity;
 import net.minecraft.world.level.block.entity.SignText;
 import net.minecraft.world.level.block.entity.SignTextSlot;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.List;
 
 /**
- * The jail, built of vanilla blocks in the empty jail dimension around (0, 64, 0): a walled yard 41 x 41 with an
- * invisible ceiling, and an area for each minigame - a coal face (west), a parkour course (north), a shooting range
- * (east), a fishing pond (south-east) and a quiz lectern (south-west). Rebuilt when VERSION goes up.
+ * The jail's yard: a walled hall around (0, 64, 0) in the jail dimension where prisoners arrive, with one NPC for each
+ * minigame (right-click to choose a room). Also the block-placing helpers the rooms are built with.
  */
 public final class JailBuilder {
-    public static final int VERSION = 1;
+    /** Bumped when the yard changes; it is then rebuilt, and every room rebuilt when next entered. */
+    public static final int VERSION = 2;
     public static final int FLOOR = 63;
-    public static final int HALF = 21;
-    public static final int TOP = 77;
-    public static final Vec3 SPAWN = new Vec3(0.5, 64, 0.5);
-
-    /** The coal face: x = -19, z from -12 to 8, y from 64 to 69. */
-    public static final int COAL_X = -19, COAL_Z0 = -12, COAL_Z1 = 8, COAL_Y0 = 64, COAL_Y1 = 69;
-    /** Parkour: start on the emerald pad, reach the gold block. */
-    public static final BlockPos PARKOUR_PAD = new BlockPos(-15, FLOOR, -17);
-    public static final Vec3 PARKOUR_START = new Vec3(-14.5, 64, -15.5);
-    public static final List<BlockPos> PARKOUR = List.of(
-            new BlockPos(-13, 64, -17), new BlockPos(-11, 65, -17), new BlockPos(-9, 65, -15), new BlockPos(-7, 66, -15),
-            new BlockPos(-5, 66, -17), new BlockPos(-3, 67, -17), new BlockPos(-1, 67, -15), new BlockPos(1, 68, -15),
-            new BlockPos(3, 68, -17), new BlockPos(5, 69, -17), new BlockPos(7, 69, -15), new BlockPos(9, 70, -15),
-            new BlockPos(11, 70, -17));
-    public static final BlockPos PARKOUR_FINISH = new BlockPos(13, 70, -17);
-    /** Shooting range: targets on the east wall, shoot from behind the red line at x = 8. */
-    public static final List<BlockPos> TARGETS = List.of(new BlockPos(19, 66, -6), new BlockPos(19, 66, 0), new BlockPos(19, 66, 6),
-            new BlockPos(19, 68, -3), new BlockPos(19, 68, 3));
-    public static final int SHOOTING_LINE_X = 8;
-    /** Fishing pond: water from x 8 to 17, z 10 to 18, y 60 to 63. */
-    public static final int POND_X0 = 8, POND_X1 = 17, POND_Z0 = 10, POND_Z1 = 18;
-    public static final BlockPos LECTERN = new BlockPos(-8, 64, 14);
+    public static final int HUB_HALF = 15;
+    public static final int TOP = 78;
+    public static final Vec3 SPAWN = new Vec3(0.5, 64, 4.5);
+    /** Where each minigame's NPC stands in the yard, in the order of {@link MiniGames.Game}. */
+    public static final List<BlockPos> NPCS = List.of(new BlockPos(-9, 64, -6), new BlockPos(-5, 64, -10), new BlockPos(0, 64, -12),
+            new BlockPos(5, 64, -10), new BlockPos(9, 64, -6));
+    public static final String NPC_TAG = "jail_npc";
 
     private JailBuilder() {
     }
 
-    /** Whether a position is inside the jail's walls. */
+    /** Whether a position is in the yard. */
+    public static boolean inHub(Vec3 pos) {
+        return Math.abs(pos.x) < HUB_HALF && Math.abs(pos.z) < HUB_HALF && pos.y > FLOOR - 6 && pos.y < TOP;
+    }
+
+    /** Whether a position is anywhere a prisoner may be: the yard or a room. */
     public static boolean inside(Vec3 pos) {
-        return Math.abs(pos.x) < HALF && Math.abs(pos.z) < HALF && pos.y > FLOOR - 6 && pos.y < TOP;
+        return inHub(pos) || Rooms.at(pos) != null;
     }
 
     public static void ensureBuilt(ServerLevel level) {
@@ -62,78 +54,120 @@ public final class JailBuilder {
             build(level);
             data.setBuilt(VERSION);
         }
+        // The yard stays loaded, so its NPCs are always there.
+        for (int cx = -1; cx <= 0; cx++) {
+            for (int cz = -1; cz <= 0; cz++) {
+                level.setChunkForced(cx, cz, true);
+            }
+        }
+    }
+
+    /** Puts the yard's NPCs back if missing (spawned once their chunks' entities are loaded; extra copies removed). */
+    public static void ensureNpcs(ServerLevel level) {
+        for (MiniGames.Game game : MiniGames.Game.values()) {
+            ensureNpc(level, NPCS.get(game.ordinal()), game.label + " (우클릭)", game.key, SPAWN);
+        }
+    }
+
+    public static void ensureNpc(ServerLevel level, BlockPos at, String name, String key, Vec3 looking) {
+        if (!level.areEntitiesLoaded(net.minecraft.world.level.ChunkPos.pack(at))) {
+            return;
+        }
+        List<Villager> found = level.getEntitiesOfClass(Villager.class, new AABB(at).inflate(1.5), v -> key.equals(npcKey(v)));
+        if (found.isEmpty()) {
+            npc(level, at, name, key, looking);
+        }
+        for (int i = 1; i < found.size(); i++) {
+            found.get(i).discard();
+        }
     }
 
     public static void build(ServerLevel level) {
-        int h = HALF;
-        fill(level, -h - 1, FLOOR - 6, -h - 1, h + 1, TOP + 1, h + 1, Blocks.AIR.defaultBlockState());
-        // Floor, with a lamp every six blocks, and stone under it.
-        fill(level, -h, FLOOR - 1, -h, h, FLOOR - 1, h, Blocks.STONE.defaultBlockState());
-        for (int x = -h; x <= h; x++) {
-            for (int z = -h; z <= h; z++) {
-                boolean lamp = Math.floorMod(x, 6) == 3 && Math.floorMod(z, 6) == 3;
-                set(level, x, FLOOR, z, lamp ? Blocks.SEA_LANTERN : (x + z) % 2 == 0 ? Blocks.POLISHED_ANDESITE : Blocks.ANDESITE);
-            }
-        }
-        // Walls with barred windows, an invisible ceiling.
-        for (int y = FLOOR; y <= TOP; y++) {
-            for (int i = -h; i <= h; i++) {
-                boolean window = y >= 66 && y <= 67 && Math.floorMod(i, 4) == 0;
-                Block wall = window ? Blocks.IRON_BARS : y == 70 ? Blocks.CHISELED_STONE_BRICKS : Blocks.STONE_BRICKS;
-                set(level, i, y, -h, wall);
-                set(level, i, y, h, wall);
-                set(level, -h, y, i, wall);
-                set(level, h, y, i, wall);
-            }
-        }
-        fill(level, -h, TOP, -h, h, TOP, h, Blocks.BARRIER.defaultBlockState());
-
-        // Coal face: stone backed by the wall, about half of it coal ore.
-        for (int z = COAL_Z0; z <= COAL_Z1; z++) {
-            for (int y = COAL_Y0; y <= COAL_Y1; y++) {
-                set(level, COAL_X - 1, y, z, Blocks.STONE);
-                set(level, COAL_X, y, z, hash(z, y) % 100 < 50 ? Blocks.COAL_ORE : Blocks.STONE);
-            }
-        }
-
-        // Parkour: an emerald start pad, coloured steps rising to a gold block.
-        set(level, PARKOUR_PAD.getX(), PARKOUR_PAD.getY(), PARKOUR_PAD.getZ(), Blocks.EMERALD_BLOCK);
-        Block[] steps = {Blocks.CONCRETE.lime(), Blocks.CONCRETE.yellow(), Blocks.CONCRETE.orange(), Blocks.CONCRETE.lightBlue(), Blocks.CONCRETE.magenta()};
-        for (int i = 0; i < PARKOUR.size(); i++) {
-            BlockPos p = PARKOUR.get(i);
-            set(level, p.getX(), p.getY(), p.getZ(), steps[i % steps.length]);
-        }
-        set(level, PARKOUR_FINISH.getX(), PARKOUR_FINISH.getY(), PARKOUR_FINISH.getZ(), Blocks.GOLD_BLOCK);
-
-        // Shooting range: targets on the east wall, a red line to shoot from.
-        for (BlockPos t : TARGETS) {
-            set(level, t.getX() + 1, t.getY(), t.getZ(), Blocks.STONE_BRICKS);
-            set(level, t.getX(), t.getY(), t.getZ(), Blocks.TARGET);
-        }
-        for (int z = -8; z <= 8; z++) {
-            set(level, SHOOTING_LINE_X, FLOOR, z, Blocks.CONCRETE.red());
-        }
-
-        // Fishing pond: a stone basin filled with water.
-        fill(level, POND_X0 - 1, FLOOR - 5, POND_Z0 - 1, POND_X1 + 1, FLOOR - 1, POND_Z1 + 1, Blocks.STONE.defaultBlockState());
-        fill(level, POND_X0, FLOOR - 3, POND_Z0, POND_X1, FLOOR, POND_Z1, Blocks.WATER.defaultBlockState());
-        fill(level, POND_X0, FLOOR - 4, POND_Z0, POND_X1, FLOOR - 4, POND_Z1, Blocks.SAND.defaultBlockState());
-
-        // Quiz lectern, facing the yard.
-        level.setBlock(LECTERN, Blocks.LECTERN.defaultBlockState().setValue(LecternBlock.FACING, Direction.NORTH), Block.UPDATE_CLIENTS);
-
-        // Signs.
-        sign(level, new BlockPos(1, 64, 2), "§l감옥", "미니게임으로", "남은 시간을", "줄이세요!");
-        sign(level, new BlockPos(-16, 64, -2), "§l석탄 캐기", "석탄 1개당", "-10초", "곡괭이로 캐기");
-        sign(level, new BlockPos(-15, 64, -13), "§l파쿠르", "금 블록까지", "가면 -1분", "에메랄드에서 시작");
-        sign(level, new BlockPos(6, 64, -10), "§l과녁 맞히기", "빨간 선 뒤에서", "맞히면 -15초", "정중앙 -30초");
-        sign(level, new BlockPos(6, 64, 13), "§l낚시", "물고기 1마리당", "-20초", "");
-        sign(level, new BlockPos(-8, 64, 11), "§l퀴즈", "독서대 우클릭", "채팅으로 답하면", "-30초");
+        int h = HUB_HALF;
+        // The first version's yard was 43 wide: clear all of it.
+        fill(level, -23, FLOOR - 6, -23, 23, TOP + 1, 23, Blocks.AIR.defaultBlockState());
+        hall(level, BlockPos.ZERO, h, h);
+        sign(level, new BlockPos(0, 64, 1), SPAWN, "§l감옥", "NPC를 우클릭해", "미니게임 방을", "고르세요");
+        sign(level, new BlockPos(-3, 64, 2), SPAWN, "같은 방에서", "같이 하면", "남이 줄인 시간의", "1/10도 줄어요");
     }
 
-    /** A standing sign at pos facing the yard's centre, with up to four lines. */
-    private static void sign(ServerLevel level, BlockPos pos, String... lines) {
-        double angle = Math.atan2(pos.getX() - SPAWN.x, SPAWN.z - pos.getZ());
+    /**
+     * A walled, lit hall centred on origin (x from -hx to hx, z from -hz to hz) with an invisible ceiling. Earlier blocks in
+     * its space are cleared.
+     */
+    public static void hall(ServerLevel level, BlockPos origin, int hx, int hz) {
+        int ox = origin.getX(), oz = origin.getZ();
+        fill(level, ox - hx, FLOOR - 6, oz - hz, ox + hx, TOP + 1, oz + hz, Blocks.AIR.defaultBlockState());
+        fill(level, ox - hx, FLOOR - 1, oz - hz, ox + hx, FLOOR - 1, oz + hz, Blocks.STONE.defaultBlockState());
+        for (int x = -hx; x <= hx; x++) {
+            for (int z = -hz; z <= hz; z++) {
+                boolean lamp = Math.floorMod(x, 6) == 3 && Math.floorMod(z, 6) == 3;
+                set(level, ox + x, FLOOR, oz + z, lamp ? Blocks.SEA_LANTERN : (x + z) % 2 == 0 ? Blocks.POLISHED_ANDESITE : Blocks.ANDESITE);
+            }
+        }
+        for (int y = FLOOR; y < TOP; y++) {
+            for (int x = -hx; x <= hx; x++) {
+                Block wall = wall(y, x);
+                set(level, ox + x, y, oz - hz, wall);
+                set(level, ox + x, y, oz + hz, wall);
+            }
+            for (int z = -hz; z <= hz; z++) {
+                Block wall = wall(y, z);
+                set(level, ox - hx, y, oz + z, wall);
+                set(level, ox + hx, y, oz + z, wall);
+            }
+        }
+        fill(level, ox - hx, TOP, oz - hz, ox + hx, TOP, oz + hz, Blocks.BARRIER.defaultBlockState());
+    }
+
+    private static Block wall(int y, int along) {
+        boolean window = y >= 66 && y <= 67 && Math.floorMod(along, 4) == 0;
+        return window ? Blocks.IRON_BARS : y == 70 ? Blocks.CHISELED_STONE_BRICKS : y % 9 == 0 ? Blocks.GLOWSTONE : Blocks.STONE_BRICKS;
+    }
+
+    /** A villager that stands still, cannot be hurt, and shows its name; replaces any NPC already standing there. */
+    public static void npc(ServerLevel level, BlockPos at, String name, String key) {
+        npc(level, at, name, key, SPAWN);
+    }
+
+    /** As above, looking towards a point. */
+    public static void npc(ServerLevel level, BlockPos at, String name, String key, Vec3 looking) {
+        AABB around = new AABB(at).inflate(1.5);
+        level.getEntitiesOfClass(Villager.class, around, v -> v.entityTags().contains(NPC_TAG)).forEach(v -> v.discard());
+        Villager villager = EntityTypes.VILLAGER.create(level, EntitySpawnReason.COMMAND);
+        if (villager == null) {
+            return;
+        }
+        Vec3 pos = Vec3.atBottomCenterOf(at);
+        double yaw = Math.toDegrees(Math.atan2(-(looking.x - pos.x), looking.z - pos.z));
+        villager.snapTo(pos.x, pos.y, pos.z, (float) yaw, 0.0F);
+        villager.setYHeadRot((float) yaw);
+        villager.setNoAi(true);
+        villager.setSilent(true);
+        villager.setPersistenceRequired();
+        villager.setCustomName(Component.literal(name));
+        villager.setCustomNameVisible(true);
+        villager.addTag(NPC_TAG);
+        villager.addTag(NPC_TAG + ":" + key);
+        level.addFreshEntity(villager);
+    }
+
+    /** The key of an NPC ("coal", "exit"...), or null if the entity is not a jail NPC. */
+    public static String npcKey(net.minecraft.world.entity.Entity entity) {
+        if (!entity.entityTags().contains(NPC_TAG)) {
+            return null;
+        }
+        for (String tag : entity.entityTags()) {
+            if (tag.startsWith(NPC_TAG + ":")) {
+                return tag.substring(NPC_TAG.length() + 1);
+            }
+        }
+        return null;
+    }
+
+    /** A standing sign at pos facing the point it is read from, with up to four lines. */
+    public static void sign(ServerLevel level, BlockPos pos, Vec3 facing, String... lines) {
+        double angle = Math.atan2(pos.getX() + 0.5 - facing.x, facing.z - pos.getZ() - 0.5);
         int rotation = Math.floorMod((int) Math.round(angle / (2 * Math.PI) * 16), 16);
         level.setBlock(pos, Blocks.OAK_SIGN.defaultBlockState().setValue(StandingSignBlock.ROTATION, rotation), Block.UPDATE_CLIENTS);
         if (level.getBlockEntity(pos) instanceof SignBlockEntity sign) {
@@ -146,16 +180,16 @@ public final class JailBuilder {
         }
     }
 
-    private static int hash(int a, int b) {
+    public static int hash(int a, int b) {
         int n = a * 73856093 ^ b * 19349663;
         return Math.floorMod(n ^ (n >>> 13), 100_003);
     }
 
-    private static void set(ServerLevel level, int x, int y, int z, Block block) {
+    public static void set(ServerLevel level, int x, int y, int z, Block block) {
         level.setBlock(new BlockPos(x, y, z), block.defaultBlockState(), Block.UPDATE_CLIENTS);
     }
 
-    private static void fill(ServerLevel level, int x0, int y0, int z0, int x1, int y1, int z1, BlockState state) {
+    public static void fill(ServerLevel level, int x0, int y0, int z0, int x1, int y1, int z1, BlockState state) {
         for (int x = x0; x <= x1; x++) {
             for (int y = y0; y <= y1; y++) {
                 for (int z = z0; z <= z1; z++) {

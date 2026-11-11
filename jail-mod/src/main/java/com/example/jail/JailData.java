@@ -10,6 +10,9 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.Map;
 import java.util.UUID;
 
@@ -17,20 +20,33 @@ import java.util.UUID;
 public final class JailData extends SavedData {
     private static final Codec<JailData> CODEC = RecordCodecBuilder.create(i -> i.group(
             Codec.unboundedMap(Codec.STRING, Prisoner.CODEC).fieldOf("prisoners").forGetter(JailData::byString),
-            Codec.INT.fieldOf("built").forGetter(d -> d.built)
+            Codec.INT.fieldOf("built").forGetter(d -> d.built),
+            Codec.STRING.listOf().optionalFieldOf("rooms", List.of()).forGetter(d -> List.copyOf(d.rooms))
     ).apply(i, JailData::new));
     public static final SavedDataType<JailData> TYPE = new SavedDataType<>(
             Identifier.fromNamespaceAndPath(JailMod.ID, "prisoners"), JailData::new, CODEC, null);
 
     private final Map<UUID, Prisoner> prisoners = new HashMap<>();
     private int built;
+    /** Rooms built, as "key@version". */
+    private final Set<String> rooms = new HashSet<>();
 
     public JailData() {
     }
 
-    private JailData(Map<String, Prisoner> saved, int built) {
+    private JailData(Map<String, Prisoner> saved, int built, List<String> rooms) {
         saved.forEach((id, prisoner) -> this.prisoners.put(UUID.fromString(id), prisoner));
         this.built = built;
+        this.rooms.addAll(rooms);
+    }
+
+    public boolean roomBuilt(String key) {
+        return this.rooms.contains(key);
+    }
+
+    public void setRoomBuilt(String key) {
+        this.rooms.add(key);
+        setDirty();
     }
 
     private Map<String, Prisoner> byString() {

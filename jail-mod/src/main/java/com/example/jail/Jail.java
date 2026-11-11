@@ -12,7 +12,9 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Unit;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.component.DyedItemColor;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantment;
@@ -99,7 +101,7 @@ public final class Jail {
                 player.gameMode.getGameModeForPlayer(), player.experienceLevel, player.experienceProgress, player.totalExperience, items));
         player.setGameMode(GameType.SURVIVAL);
         toYard(player);
-        giveKit(player);
+        ensureKit(player);
         player.setHealth(player.getMaxHealth());
         player.sendSystemMessage(Component.literal("감옥에 " + minutes + "분 동안 갇혔습니다. 가지고 있던 물건은 나갈 때 돌려받습니다.")
                 .withStyle(ChatFormatting.RED));
@@ -164,6 +166,10 @@ public final class Jail {
             return;
         }
         long now = server.getTickCount();
+        ServerLevel jail = level(server);
+        if (jail != null && now % 40 == 0) {
+            JailBuilder.ensureNpcs(jail);
+        }
         for (ServerPlayer player : List.copyOf(server.getPlayerList().getPlayers())) {
             Prisoner prisoner = data.get(player.getUUID());
             if (prisoner == null) {
@@ -174,6 +180,7 @@ public final class Jail {
                 continue;
             }
             if (!isJail(player.level()) || !JailBuilder.inside(player.position())) {
+                // Wandered off, or teleported out: back to the yard.
                 toYard(player);
             }
             prisoner.remaining--;
@@ -204,21 +211,52 @@ public final class Jail {
         player.setDeltaMovement(Vec3.ZERO);
     }
 
-    /** The jail's tools: a pickaxe for the coal, a bow that never runs out of arrows, a fishing rod. None wear out. */
-    public static void giveKit(ServerPlayer player) {
+    /** The prison uniform's colour: orange. */
+    public static final int UNIFORM = 0xF07818;
+
+    /**
+     * Gives a prisoner whatever they are missing of the jail's things: the uniform (orange, cursed with binding so it
+     * stays on) and the tools - a pickaxe for the coal, a bow that never runs out of arrows, a fishing rod. None wear out.
+     */
+    public static void ensureKit(ServerPlayer player) {
         Inventory inventory = player.getInventory();
-        inventory.add(tool(new ItemStack(Items.WOODEN_PICKAXE), "감옥 곡괭이"));
-        ItemStack bow = tool(new ItemStack(Items.BOW), "감옥 활");
-        Holder<Enchantment> infinity = player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.INFINITY);
-        bow.enchant(infinity, 1);
-        inventory.add(bow);
-        inventory.add(new ItemStack(Items.ARROW));
-        inventory.add(tool(new ItemStack(Items.FISHING_ROD), "감옥 낚싯대"));
+        uniform(player, EquipmentSlot.CHEST, Items.LEATHER_CHESTPLATE, "죄수복 상의");
+        uniform(player, EquipmentSlot.LEGS, Items.LEATHER_LEGGINGS, "죄수복 바지");
+        uniform(player, EquipmentSlot.FEET, Items.LEATHER_BOOTS, "죄수 신발");
+        if (!holds(player, Items.WOODEN_PICKAXE)) {
+            inventory.add(tool(new ItemStack(Items.WOODEN_PICKAXE), "감옥 곡괭이"));
+        }
+        if (!holds(player, Items.BOW)) {
+            ItemStack bow = tool(new ItemStack(Items.BOW), "감옥 활");
+            bow.enchant(enchantment(player, Enchantments.INFINITY), 1);
+            inventory.add(bow);
+        }
+        if (!holds(player, Items.ARROW)) {
+            inventory.add(new ItemStack(Items.ARROW));
+        }
+        if (!holds(player, Items.FISHING_ROD)) {
+            inventory.add(tool(new ItemStack(Items.FISHING_ROD), "감옥 낚싯대"));
+        }
     }
 
-    /** Whether a player is holding the whole jail kit (given again after a death in jail). */
+    private static void uniform(ServerPlayer player, EquipmentSlot slot, net.minecraft.world.item.Item item, String name) {
+        if (player.getItemBySlot(slot).is(item)) {
+            return;
+        }
+        ItemStack piece = tool(new ItemStack(item), name);
+        piece.set(DataComponents.DYED_COLOR, new DyedItemColor(UNIFORM));
+        piece.enchant(enchantment(player, Enchantments.BINDING_CURSE), 1);
+        player.setItemSlot(slot, piece);
+    }
+
+    private static Holder<Enchantment> enchantment(ServerPlayer player, ResourceKey<Enchantment> key) {
+        return player.level().registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(key);
+    }
+
+    /** Whether a player has all the jail's things (given again after a death in jail). */
     public static boolean hasKit(ServerPlayer player) {
-        return holds(player, Items.WOODEN_PICKAXE) && holds(player, Items.BOW) && holds(player, Items.FISHING_ROD);
+        return holds(player, Items.WOODEN_PICKAXE) && holds(player, Items.BOW) && holds(player, Items.FISHING_ROD)
+                && player.getItemBySlot(EquipmentSlot.CHEST).is(Items.LEATHER_CHESTPLATE);
     }
 
     /** Whether any slot holds this item, whatever its name or enchantments. */
