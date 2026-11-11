@@ -29,6 +29,7 @@ import java.util.UUID;
  * and answering the quiz at the lectern.
  */
 public final class MiniGames {
+    // Time off, in ticks (20 a second).
     public static final int COAL = 10 * 20;
     public static final int PARKOUR = 60 * 20;
     public static final int TARGET = 15 * 20;
@@ -36,14 +37,29 @@ public final class MiniGames {
     public static final int FISH = 20 * 20;
     public static final int QUIZ = 30 * 20;
     /** Mined coal grows back after this long. */
-    public static final int COAL_REGROW = 30 * 20;
-    /** At most one target hit counts every this many ticks. */
-    public static final int TARGET_COOLDOWN = 40;
+    public static final int COAL_REGROW = 45 * 20;
+
+    /** Each minigame's name, and how long after it counts before it counts again. */
+    public enum Game {
+        COAL("석탄 캐기", 3 * 20),
+        PARKOUR("파쿠르", 3 * 60 * 20),
+        TARGET("과녁 맞히기", 5 * 20),
+        FISH("낚시", 20 * 20),
+        QUIZ("퀴즈", 30 * 20);
+
+        public final String label;
+        public final int cooldown;
+
+        Game(String label, int cooldown) {
+            this.label = label;
+            this.cooldown = cooldown;
+        }
+    }
 
     private static final Map<BlockPos, Long> REGROW = new HashMap<>();
     private static final Map<UUID, Integer> ANSWERS = new HashMap<>();
     private static final Map<UUID, String> QUESTIONS = new HashMap<>();
-    private static final Map<UUID, Long> LAST_TARGET = new HashMap<>();
+    private static final Map<UUID, Map<Game, Long>> READY_AT = new HashMap<>();
 
     private MiniGames() {
     }
@@ -51,18 +67,43 @@ public final class MiniGames {
     public static void forget(ServerPlayer player) {
         ANSWERS.remove(player.getUUID());
         QUESTIONS.remove(player.getUUID());
-        LAST_TARGET.remove(player.getUUID());
+        READY_AT.remove(player.getUUID());
+    }
+
+    // ---- Cooldowns -----------------------------------------------------------------------------------
+
+    /** Ticks until a minigame counts again for this player; 0 when it counts now. */
+    public static int cooldownLeft(ServerPlayer player, Game game) {
+        Long ready = READY_AT.getOrDefault(player.getUUID(), Map.of()).get(game);
+        long now = player.level().getServer().getTickCount();
+        return ready == null || ready <= now ? 0 : (int) (ready - now);
+    }
+
+    public static void startCooldown(ServerPlayer player, Game game) {
+        READY_AT.computeIfAbsent(player.getUUID(), id -> new java.util.EnumMap<>(Game.class))
+                .put(game, player.level().getServer().getTickCount() + (long) game.cooldown);
+    }
+
+    /** Says how long until the game counts again; true while it is cooling down. */
+    private static boolean coolingDown(ServerPlayer player, Game game) {
+        int left = cooldownLeft(player, game);
+        if (left > 0) {
+            player.sendOverlayMessage(Component.literal(game.label + " 쿨타임: " + Jail.seconds(Math.max(20, left)) + " 남음")
+                    .withStyle(ChatFormatting.RED));
+        }
+        return left > 0;
     }
 
     // ---- Coal ----------------------------------------------------------------------------------------
 
-    /** In jail only coal ore may be broken. */
+    /** In jail only coal ore may be broken, and not while the coal cooldown runs. */
     public static boolean mayBreak(ServerPlayer player, Level level, BlockState state) {
-        return Jail.isJail(level) && state.is(Blocks.COAL_ORE);
+        return Jail.isJail(level) && state.is(Blocks.COAL_ORE) && !coolingDown(player, Game.COAL);
     }
 
     public static void coalMined(ServerPlayer player, BlockPos pos) {
         Jail.reduce(player, COAL, "석탄 캐기");
+        startCooldown(player, Game.COAL);
         REGROW.put(pos.immutable(), player.level().getServer().getTickCount() + (long) COAL_REGROW);
     }
 
@@ -91,7 +132,10 @@ public final class MiniGames {
             return;
         }
         if (player.blockPosition().below().equals(JailBuilder.PARKOUR_FINISH)) {
-            Jail.reduce(player, PARKOUR, "파쿠르 완주");
+            if (!coolingDown(player, Game.PARKOUR)) {
+                Jail.reduce(player, PARKOUR, "파쿠르 완주");
+                startCooldown(player, Game.PARKOUR);
+            }
             Jail.teleport(player, (ServerLevel) player.level(), JailBuilder.PARKOUR_START, 180.0F, 0.0F);
         }
         if (now % 10 == 0) {
@@ -102,7 +146,7 @@ public final class MiniGames {
         }
     }
 
-    /** Fish caught are taken away for time off. */
+    /** Fish caught are taken away, for time off unless the fishing cooldown runs. */
     public static void checkFish(ServerPlayer player) {
         Inventory inventory = player.getInventory();
         int fish = 0;
@@ -113,8 +157,9 @@ public final class MiniGames {
                 inventory.setItem(i, ItemStack.EMPTY);
             }
         }
-        if (fish > 0) {
+        if (fish > 0 && !coolingDown(player, Game.FISH)) {
             Jail.reduce(player, FISH * fish, "물고기 " + fish + "마리");
+            startCooldown(player, Game.FISH);
         }
     }
 
@@ -126,12 +171,10 @@ public final class MiniGames {
             return;
         }
         if (player.getX() < JailBuilder.SHOOTING_LINE_X + 0.5) {
-            long now = level.getServer().getTickCount();
-            Long last = LAST_TARGET.get(player.getUUID());
-            if (last != null && now - last < TARGET_COOLDOWN) {
+            if (coolingDown(player, Game.TARGET)) {
                 return;
             }
-            LAST_TARGET.put(player.getUUID(), now);
+            startCooldown(player, Game.TARGET);
             boolean centre = offCentre(hit) < 1.0 / 6.0;
             Jail.reduce(player, centre ? BULLSEYE : TARGET, centre ? "과녁 정중앙" : "과녁 명중");
         } else {
@@ -153,6 +196,11 @@ public final class MiniGames {
     /** Right-clicking the lectern: a sum to answer in chat. */
     public static void ask(ServerPlayer player) {
         String question = QUESTIONS.get(player.getUUID());
+        if (question == null && coolingDown(player, Game.QUIZ)) {
+            player.sendSystemMessage(Component.literal("다음 문제까지 " + Jail.seconds(Math.max(20, cooldownLeft(player, Game.QUIZ))) + " 남았습니다.")
+                    .withStyle(ChatFormatting.RED));
+            return;
+        }
         if (question == null) {
             RandomSource random = player.getRandom();
             int a, b, answer;
@@ -187,10 +235,11 @@ public final class MiniGames {
         }
         ANSWERS.remove(player.getUUID());
         QUESTIONS.remove(player.getUUID());
+        startCooldown(player, Game.QUIZ);
         if (given == expected) {
             Jail.reduce(player, QUIZ, "퀴즈 정답");
         } else {
-            player.sendSystemMessage(Component.literal("틀렸습니다. 정답은 " + expected + "였습니다. 독서대를 다시 눌러 새 문제를 받으세요.")
+            player.sendSystemMessage(Component.literal("틀렸습니다. 정답은 " + expected + "였습니다. 30초 뒤에 독서대를 다시 눌러 새 문제를 받으세요.")
                     .withStyle(ChatFormatting.RED));
         }
         return true;

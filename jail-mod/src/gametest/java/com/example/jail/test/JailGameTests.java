@@ -92,6 +92,8 @@ public final class JailGameTests {
         MiniGames.coalMined(player, new BlockPos(JailBuilder.COAL_X, 65, 0));
         expected -= MiniGames.COAL;
         helper.assertValueEqual(prisoner.remaining, expected, "after a coal");
+        helper.assertFalse(MiniGames.mayBreak(player, jail, Blocks.COAL_ORE.defaultBlockState()), "coal may be mined again at once");
+        helper.assertValueEqual(MiniGames.cooldownLeft(player, MiniGames.Game.COAL), 3 * 20, "coal cooldown");
 
         // Parkour: standing on the gold block.
         Jail.teleport(player, jail, Vec3.atBottomCenterOf(JailBuilder.PARKOUR_FINISH.above()), 0, 0);
@@ -99,6 +101,10 @@ public final class JailGameTests {
         expected -= MiniGames.PARKOUR;
         helper.assertValueEqual(prisoner.remaining, expected, "after the parkour");
         helper.assertTrue(player.position().distanceTo(JailBuilder.PARKOUR_START) < 0.01, "not sent back to the parkour start");
+        Jail.teleport(player, jail, Vec3.atBottomCenterOf(JailBuilder.PARKOUR_FINISH.above()), 0, 0);
+        MiniGames.tickPrisoner(player, 1);
+        helper.assertValueEqual(prisoner.remaining, expected, "a second run during the parkour cooldown counted");
+        helper.assertTrue(player.position().distanceTo(JailBuilder.PARKOUR_START) < 0.01, "not sent back to the start during the cooldown");
 
         // Fishing: fish caught are taken away.
         player.getInventory().add(new ItemStack(Items.COD, 2));
@@ -106,6 +112,10 @@ public final class JailGameTests {
         expected -= 2 * MiniGames.FISH;
         helper.assertValueEqual(prisoner.remaining, expected, "after two fish");
         helper.assertFalse(Jail.holds(player, Items.COD), "the fish were kept");
+        player.getInventory().add(new ItemStack(Items.SALMON));
+        MiniGames.checkFish(player);
+        helper.assertValueEqual(prisoner.remaining, expected, "a fish during the fishing cooldown counted");
+        helper.assertFalse(Jail.holds(player, Items.SALMON), "a fish during the cooldown was kept");
 
         // Quiz: a number in chat answers it; other chat is chat.
         MiniGames.setQuestion(player, "2 + 2 = ?", 4);
@@ -114,6 +124,8 @@ public final class JailGameTests {
         expected -= MiniGames.QUIZ;
         helper.assertValueEqual(prisoner.remaining, expected, "after a right answer");
         helper.assertFalse(MiniGames.answer(player, "4"), "answered with no question");
+        MiniGames.ask(player);
+        helper.assertFalse(MiniGames.answer(player, "0"), "a new question during the quiz cooldown");
         MiniGames.setQuestion(player, "3 × 3 = ?", 9);
         helper.assertTrue(MiniGames.answer(player, "8"), "a wrong answer was not taken");
         helper.assertValueEqual(prisoner.remaining, expected, "a wrong answer took time off");
