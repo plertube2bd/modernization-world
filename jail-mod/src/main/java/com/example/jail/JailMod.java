@@ -111,6 +111,9 @@ public final class JailMod implements ModInitializer {
         });
         ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> {
             Prisoner prisoner = Jail.prisoner(handler.player);
+            if (prisoner != null) {
+                Jail.repairAround(handler.player);
+            }
             if (prisoner != null && prisoner.remaining > 0) {
                 handler.player.sendSystemMessage(Component.literal("아직 감옥에 있습니다. 남은 시간 " + Jail.clock(prisoner.remaining))
                         .withStyle(ChatFormatting.RED));

@@ -192,7 +192,25 @@ public final class Jail {
                 player.getFoodData().setFoodLevel(20);
                 player.getFoodData().setSaturation(5.0F);
             }
+            if (now % 40 == 0) {
+                repairAround(player);
+            }
             MiniGames.tickPrisoner(player, now);
+        }
+    }
+
+    /**
+     * Rebuilds the yard or the room a prisoner is in if its floor is missing (however that came about), and puts them
+     * back on their feet in it.
+     */
+    public static void repairAround(ServerPlayer player) {
+        if (!(player.level() instanceof ServerLevel level) || !isJail(level)) {
+            return;
+        }
+        Rooms.Room room = Rooms.of(player);
+        boolean rebuilt = room != null ? Rooms.repair(level, room) : JailBuilder.inHub(player.position()) && JailBuilder.repairHub(level);
+        if (rebuilt) {
+            teleport(player, level, room != null ? room.spawn() : JailBuilder.SPAWN, room != null ? -90.0F : 180.0F, 0.0F);
         }
     }
 

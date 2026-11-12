@@ -148,6 +148,15 @@ public final class Rooms {
         return room.at(new BlockPos(-28, 64, -4));
     }
 
+    /** Rebuilds a room if its floor has gone missing; returns whether it had to. */
+    public static boolean repair(ServerLevel level, Room room) {
+        if (JailBuilder.floorIntact(level, room.origin(), HX, HZ)) {
+            return false;
+        }
+        build(level, room);
+        return true;
+    }
+
     public static void ensureBuilt(ServerLevel level, Room room) {
         JailData data = JailData.get(level.getServer());
         String built = room.key() + "@" + JailBuilder.VERSION;

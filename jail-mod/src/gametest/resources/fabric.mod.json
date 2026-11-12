@@ -6,7 +6,7 @@
   "environment": "*",
   "entrypoints": {
     "fabric-gametest": ["com.example.jail.test.JailGameTests"],
-    "fabric-client-gametest": ["com.example.jail.test.JailClientGameTest"]
+    "fabric-client-gametest": ["com.example.jail.test.ServerRejoinTest", "com.example.jail.test.JailRejoinClientGameTest", "com.example.jail.test.JailClientGameTest"]
   },
   "depends": { "jail": "*" }
 }

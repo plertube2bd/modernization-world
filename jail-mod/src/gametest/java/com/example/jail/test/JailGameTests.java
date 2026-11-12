@@ -299,6 +299,26 @@ public final class JailGameTests {
         helper.succeed();
     }
 
+    /** A yard or room whose floor has gone missing is rebuilt while a prisoner is in it, and they are put back on it. */
+    @GameTest(structure = ARENA, maxTicks = 20)
+    public void aMissingFloorIsRebuilt(GameTestHelper helper) {
+        ServerPlayer player = mockPlayer(helper);
+        Jail.jail(player, 5);
+        ServerLevel jail = (ServerLevel) player.level();
+        Rooms.Room room = Rooms.room(MiniGames.Game.TARGET, 2);
+        Rooms.enter(player, room);
+        BlockPos o = room.origin();
+        JailBuilder.fill(jail, o.getX() - 31, JailBuilder.FLOOR - 1, o.getZ() - 21, o.getX() + 31, JailBuilder.FLOOR, o.getZ() + 21,
+                Blocks.AIR.defaultBlockState());
+        helper.assertFalse(JailBuilder.floorIntact(jail, o, Rooms.HX, Rooms.HZ), "the floor was not taken away");
+        Jail.repairAround(player);
+        helper.assertTrue(JailBuilder.floorIntact(jail, o, Rooms.HX, Rooms.HZ), "the room's floor was not rebuilt");
+        helper.assertTrue(player.position().distanceTo(room.spawn()) < 0.01, "not put back at the room's start");
+        helper.assertTrue(jail.getBlockState(BlockPos.containing(room.spawn()).below()).isSolid(), "nothing to stand on");
+        Jail.release(player);
+        helper.succeed();
+    }
+
     /** A mock player standing in the test's own space (they start at 0, 0, 0, which is the jail here). */
     private static ServerPlayer mockPlayer(GameTestHelper helper) {
         ServerPlayer player = helper.makeMockServerPlayerInLevel();

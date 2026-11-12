@@ -70,6 +70,26 @@ public final class JailBuilder {
         }
     }
 
+    /** Whether a hall's floor is whole: its centre and four corners are not air. */
+    public static boolean floorIntact(ServerLevel level, BlockPos origin, int hx, int hz) {
+        int[][] spots = {{0, 0}, {-hx + 1, -hz + 1}, {hx - 1, -hz + 1}, {-hx + 1, hz - 1}, {hx - 1, hz - 1}};
+        for (int[] spot : spots) {
+            if (level.getBlockState(new BlockPos(origin.getX() + spot[0], FLOOR, origin.getZ() + spot[1])).isAir()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /** Rebuilds the yard if its floor has gone missing; returns whether it had to. */
+    public static boolean repairHub(ServerLevel level) {
+        if (floorIntact(level, BlockPos.ZERO, HUB_HALF, HUB_HALF)) {
+            return false;
+        }
+        build(level);
+        return true;
+    }
+
     /** Puts the yard's NPCs back if missing (spawned once their chunks' entities are loaded; extra copies removed). */
     public static void ensureNpcs(ServerLevel level) {
         for (MiniGames.Game game : MiniGames.Game.values()) {
